@@ -16,11 +16,14 @@ An opponent pre-scout tool for NHL coaches and GMs, built on the public NHL API.
 | Hosting | Render static site |
 
 ## Project structure
-config/ team and season settings
-data/ raw JSON and DuckDB file (gitignored)
-pipeline/ Dagster assets: ingestion, metrics, reporting
-dbt/ dbt project: staging, intermediate, marts
-app/ React front end
+
+```text
+config/      team and season settings
+data/        raw JSON and DuckDB file (gitignored)
+pipeline/    Dagster assets: ingestion, metrics, reporting
+dbt/         dbt project: staging, intermediate, marts
+app/         React front end
+```
 
 
 ## Setup
