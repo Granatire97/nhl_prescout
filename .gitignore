@@ -12,3 +12,5 @@ dbt/logs/
 .DS_Store
 
 .tmp_dagster_home*/
+
+*.egg-info/
