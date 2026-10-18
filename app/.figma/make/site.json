@@ -1,0 +1,10 @@
+{
+  "description": "Pre-Scout delivers tailored game reports for NHL coaches and GMs, offering insights on opponents, player evaluations, and strategic analysis for optimal game preparation.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
