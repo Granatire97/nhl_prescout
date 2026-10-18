@@ -10,3 +10,5 @@ dbt/target/
 dbt/logs/
 
 .DS_Store
+
+.tmp_dagster_home*/
