@@ -11,6 +11,17 @@ dependencies = [
     "duckdb",
     "httpx",
     "pyyaml",
+    "aiohttp",
+    "tqdm",
+]
+
+[project.optional-dependencies]
+notebook = [
+    "pandas",
+    "numpy",
+    "seaborn",
+    "matplotlib",
+    "ipykernel",
 ]
 
 [build-system]

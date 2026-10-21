@@ -51,7 +51,7 @@ Set the team and season in `config/settings.yaml`:
 
 ```yaml
 team: DET
-season: 20252026
+season: 20262027
 ```
 
 ## How to run
@@ -59,10 +59,27 @@ season: 20252026
 Pipeline (opens the Dagster UI at http://localhost:3000):
 
 ```bash
-dagster dev -f pipeline/definitions.py
+dagster dev
 ```
 
-Front end:
+### Materialize the ingestion assets
+
+1. Run `dagster dev` from the project root and open http://localhost:3000.
+2. Go to **Assets** → **View lineage**.
+3. Click **Materialize all**.
+
+This runs two assets in order:
+
+| Asset | Output |
+| --- | --- |
+| `get_raw_redwings_schedule` | `data/raw/{season}/schedule_{team}.json` |
+| `raw_pbp_single_game` | `data/raw/{season}/{gameId}/pbp.json` |
+
+Each run logs file size and path as metadata on the asset page.
+
+![Dagster lineage](docs/dagster_lineage.png)
+
+### Front end
 
 ```bash
 cd app
