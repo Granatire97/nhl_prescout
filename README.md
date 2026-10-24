@@ -23,6 +23,7 @@ data/        raw JSON and DuckDB file (gitignored)
 pipeline/    Dagster assets: ingestion, metrics, reporting
 dbt/         dbt project: staging, intermediate, marts
 app/         React front end
+tests/       Unit tests (mocked, no live API calls)
 ```
 
 
@@ -84,6 +85,13 @@ Each run logs file size and path as metadata on the asset page.
 ```bash
 cd app
 pnpm dev
+```
+
+## Run the tests
+
+```bash
+pip install -e ".[dev]"
+pytest
 ```
 
 ## Project tracking

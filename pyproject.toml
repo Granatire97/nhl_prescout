@@ -9,9 +9,8 @@ dependencies = [
     "dagster-dbt",
     "dbt-duckdb",
     "duckdb",
-    "httpx",
     "pyyaml",
-    "aiohttp",
+    "aiohttp<3.14",
     "tqdm",
 ]
 
@@ -23,6 +22,11 @@ notebook = [
     "matplotlib",
     "ipykernel",
 ]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "aioresponses"
+]
 
 [build-system]
 requires = ["setuptools>=61"]
@@ -33,3 +37,7 @@ include = ["pipeline*"]
 
 [tool.dagster]
 module_name = "pipeline.definitions"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
