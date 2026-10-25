@@ -73,10 +73,11 @@ This runs two assets in order:
 
 | Asset | Output |
 | --- | --- |
-| `get_raw_redwings_schedule` | `data/raw/{season}/schedule_{team}.json` |
+| `get_raw_schedule` | `data/raw/{season}/schedule_{team}.json` |
 | `raw_pbp_single_game` | `data/raw/{season}/{gameId}/pbp.json` |
 
 Each run logs file size and path as metadata on the asset page.
+The pbp asset now picks the first completed regular season game.
 
 ![Dagster lineage](docs/dagster_lineage.png)
 
