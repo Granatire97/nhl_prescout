@@ -21,6 +21,7 @@ season = config["season"]
 @dg.asset(deps=[raw_schedule])
 async def raw_pbp(context: dg.AssetExecutionContext):
     """ Gets all completed play by play"""
+    season_path = RAW_DIR / str(season)
     schedule_path = RAW_DIR / str(season) / f"schedule_{team}.json"
     with open(schedule_path, "r", encoding="utf-8") as file:
         schedule = json.load(file)
@@ -30,7 +31,17 @@ async def raw_pbp(context: dg.AssetExecutionContext):
         raise ValueError(f"No completed regular season games for {team} in {season}, nothing to fetch.")
 
     game_ids = [game["game_id"] for game in completed_games]
-    url_list = [BASE_URL + PBP_ENDPOINT.format(game_id=game_id) for game_id in game_ids]
+    games_to_fetch, skipped_games = skip_games(game_ids, season_path)
+
+    if not games_to_fetch:
+        return dg.MaterializeResult(
+        metadata={
+            "games_downloaded": 0,
+            "season": season,
+            "games_skipped": len(skipped_games)
+        }
+    )
+    url_list = [BASE_URL + PBP_ENDPOINT.format(game_id=game_id) for game_id in games_to_fetch]
 
     pbp_data = (await fetch_many(url_list))
     context.log.info("Fetch all completed pbp")
@@ -44,6 +55,12 @@ async def raw_pbp(context: dg.AssetExecutionContext):
     return dg.MaterializeResult(
         metadata={
             "games_downloaded": len(pbp_data),
-            "season": season
+            "season": season,
+            "games_skipped": len(skipped_games)
         }
     )
+
+def skip_games(game_ids, season_path):
+    to_fetch = [game_id for game_id in game_ids if not (season_path / str(game_id) / "pbp.json").exists()]
+    skipped = [game_id for game_id in game_ids if (season_path / str(game_id) / "pbp.json").exists()]
+    return to_fetch, skipped
