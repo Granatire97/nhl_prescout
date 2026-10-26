@@ -13,13 +13,16 @@ RAW_DIR = ROOT / "data" / "raw"
 # Open the YAML file and load its contents
 with open(CONFIG_PATH, "r") as file:
     # safe_load prevents execution of arbitrary code embedded in YAML files
-    config = yaml.safe_load(file)
+    setting = yaml.safe_load(file)
 
-team = config["team"]
-season = config["season"]
+team = setting["team"]
+season = setting["season"]
+
+class PbpConfig(dg.Config):
+    force: bool = False
 
 @dg.asset(deps=[raw_schedule])
-async def raw_pbp(context: dg.AssetExecutionContext):
+async def raw_pbp(context: dg.AssetExecutionContext, config: PbpConfig):
     """ Gets all completed play by play"""
     season_path = RAW_DIR / str(season)
     schedule_path = RAW_DIR / str(season) / f"schedule_{team}.json"
@@ -31,7 +34,11 @@ async def raw_pbp(context: dg.AssetExecutionContext):
         raise ValueError(f"No completed regular season games for {team} in {season}, nothing to fetch.")
 
     game_ids = [game["game_id"] for game in completed_games]
-    games_to_fetch, skipped_games = skip_games(game_ids, season_path)
+
+    if config.force:
+        games_to_fetch, skipped_games = game_ids, []
+    else: 
+        games_to_fetch, skipped_games = skip_games(game_ids, season_path)
 
     if not games_to_fetch:
         return dg.MaterializeResult(
