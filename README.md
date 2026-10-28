@@ -73,13 +73,21 @@ This runs two assets in order:
 
 | Asset | Output |
 | --- | --- |
-| `get_raw_schedule` | `data/raw/{season}/schedule_{team}.json` |
-| `raw_pbp_single_game` | `data/raw/{season}/{gameId}/pbp.json` |
+| `raw_schedule` | `data/raw/{season}/schedule_{team}.json` |
+| `raw_pbp` | `data/raw/{season}/{gameId}/pbp.json` for every completed regular season game |
 
-Each run logs file size and path as metadata on the asset page.
-The pbp asset now picks the first completed regular season game.
+`raw_pbp` skips games already on disk, so re-runs only fetch new games. Files are keyed by season and game ID, so games shared between teams are fetched once. Each run logs attempted, downloaded, skipped, failed, and flagged counts as asset metadata.
 
 ![Dagster lineage](docs/dagster_lineage.png)
+
+To re-download everything, open **Materialize → Open launchpad** and set:
+
+```yaml
+ops:
+  raw_pbp:
+    config:
+      force: true
+```
 
 ### Front end
 
