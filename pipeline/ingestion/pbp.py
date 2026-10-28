@@ -5,6 +5,7 @@ from pathlib import Path
 from pipeline.client import fetch_many
 from pipeline.endpoints import BASE_URL, PBP_ENDPOINT
 from pipeline.ingestion.schedule import raw_schedule, filter_schedule
+from pipeline.storage import write_json_atomic
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG_PATH = ROOT / "config" / "settings.yaml"
@@ -50,20 +51,27 @@ async def raw_pbp(context: dg.AssetExecutionContext, config: PbpConfig):
     )
     url_list = [BASE_URL + PBP_ENDPOINT.format(game_id=game_id) for game_id in games_to_fetch]
 
-    pbp_data = (await fetch_many(url_list))
+    pbp_data = (await fetch_many(url_list, return_exceptions=True))
     context.log.info("Fetch all completed pbp")
-    for game in pbp_data:
-            
-        out_path = RAW_DIR / str(season) / str(game["id"]) / "pbp.json"
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(out_path, "w", encoding="utf-8") as file:
-            json.dump(game, file, indent=4)
+    
+    failed_games = []
+    for game_id, result in zip(games_to_fetch, pbp_data):
+
+        if isinstance(result, Exception):
+            failed_games.append((game_id, str(result)))
+            context.log.warning(f"Failed to process game {game_id}: {result}")
+            continue
+
+        out_path = RAW_DIR / str(season) / str(game_id) / "pbp.json"
+        write_json_atomic(out_path, result)
         
     return dg.MaterializeResult(
         metadata={
-            "games_downloaded": len(pbp_data),
+            "games_downloaded": len(pbp_data) - len(failed_games),
             "season": season,
-            "games_skipped": len(skipped_games)
+            "games_skipped": len(skipped_games),
+            "games_failed": len(failed_games),
+            "failed_game_ids": [game_id for game_id, _ in failed_games]
         }
     )
 

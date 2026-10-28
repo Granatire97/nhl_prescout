@@ -37,13 +37,21 @@ async def fetch_json(session, url, sem, retries=3, min_delay=0.5):
                     raise RuntimeError(f"Failed after {retries} tries: {url}") from e
                 await asyncio.sleep(2 ** attempt)
 
-async def fetch_many(urls, concurrency=3, retries=3, min_delay=0.5):
+async def fetch_many(urls, concurrency=3, retries=3, min_delay=0.5, return_exceptions=False):
     sem = asyncio.Semaphore(concurrency)
     timeout = aiohttp.ClientTimeout(total=30)
 
     async with aiohttp.ClientSession(timeout=timeout) as session:
-        tasks = [
-            fetch_json(session, url, sem, retries=retries, min_delay=min_delay) for url in urls
-        ]
+        async def safe_fetch(url):
+            try:
+                return await fetch_json(session, url, sem, retries=retries, min_delay=min_delay)
+            except Exception as e:
+                return e
+        if return_exceptions:
+            tasks = [safe_fetch(url) for url in urls]
+        else: 
+            tasks = [fetch_json(session, url, sem, retries=retries, min_delay=min_delay) for url in urls]
+
+
         results = await tqdm_asyncio.gather(*tasks)
         return results

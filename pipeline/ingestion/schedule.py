@@ -1,9 +1,9 @@
 import dagster as dg
 import yaml
-import json
 from pathlib import Path
 from pipeline.client import fetch_many
 from pipeline.endpoints import BASE_URL, SCHEDULE_ENDPOINT
+from pipeline.storage import write_json_atomic
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG_PATH = ROOT / "config" / "settings.yaml"
@@ -32,9 +32,7 @@ async def raw_schedule(context: dg.AssetExecutionContext):
         raise ValueError(f"No games found for team '{team}' in season {season}. Check the season in {CONFIG_PATH}.")
     
     out_path = RAW_DIR / str(season) / f"schedule_{team}.json"
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(out_path, "w", encoding="utf-8") as file:
-        json.dump(team_data, file, indent=4)
+    write_json_atomic(out_path, team_data)
 
     completed_games = filter_schedule(team_data, team)
 
