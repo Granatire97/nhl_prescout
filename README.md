@@ -75,6 +75,7 @@ This runs two assets in order:
 | --- | --- |
 | `raw_schedule` | `data/raw/{season}/schedule_{team}.json` |
 | `raw_pbp` | `data/raw/{season}/{gameId}/pbp.json` for every completed regular season game |
+| `raw_boxscore` | `data/raw/{season}/{gameId}/boxscore.json` for every completed regular season game |
 
 `raw_pbp` skips games already on disk, so re-runs only fetch new games. Files are keyed by season and game ID, so games shared between teams are fetched once. Each run logs attempted, downloaded, skipped, failed, and flagged counts as asset metadata.
 
