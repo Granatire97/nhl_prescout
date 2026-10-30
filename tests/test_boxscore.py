@@ -92,6 +92,6 @@ def test_check_player_stats():
     }
     empty_dict = {}
 
-    assert has_player_stats(plays_stats_exist)
-    assert not has_player_stats(no_player_stats_home)
-    assert not has_player_stats(empty_dict)
+    assert not has_player_stats(plays_stats_exist)
+    assert has_player_stats(no_player_stats_home) == ["MISSING_PLAYER_STATS"]
+    assert has_player_stats(empty_dict) == ["MISSING_PLAYER_STATS"]

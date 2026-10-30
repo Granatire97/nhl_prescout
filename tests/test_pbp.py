@@ -46,6 +46,6 @@ def test_check_plays():
     no_plays = {"plays": []}
     empty_dict = {}
 
-    assert has_plays(plays_exist)
-    assert not has_plays(no_plays)
-    assert not has_plays(empty_dict)
+    assert not has_plays(plays_exist)
+    assert has_plays(no_plays) == ["EMPTY_PLAYS"]
+    assert has_plays(empty_dict)  == ["EMPTY_PLAYS"]

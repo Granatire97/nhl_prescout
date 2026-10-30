@@ -1,9 +1,10 @@
 import dagster as dg
 import yaml
+import json
 from pathlib import Path
 from pipeline.client import fetch_many
-from pipeline.endpoints import BASE_URL, SCHEDULE_ENDPOINT
 from pipeline.storage import write_json_atomic
+from pipeline.endpoints import BASE_URL, SCHEDULE_ENDPOINT
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG_PATH = ROOT / "config" / "settings.yaml"
@@ -65,3 +66,14 @@ def filter_schedule(schedule, team):
             }
             completed_game_list.append(game_record)
     return completed_game_list
+
+def load_completed_game_ids():
+    schedule_path = RAW_DIR / str(season) / f"schedule_{team}.json"
+    with open(schedule_path, "r", encoding="utf-8") as file:
+        schedule = json.load(file)
+
+    completed_games = filter_schedule(schedule, team)
+    if not completed_games:
+        raise ValueError(f"No completed regular season games for {team} in {season}, nothing to fetch.")
+
+    return [game["game_id"] for game in completed_games]

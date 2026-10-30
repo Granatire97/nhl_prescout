@@ -7,7 +7,7 @@ from pipeline.storage import write_json_atomic
 ROOT = Path(__file__).resolve().parents[2]
 RAW_DIR = ROOT / "data" / "raw"
 
-async def cache_games(context, game_ids, season, endpoint, filename, validate, force):
+async def cache_games(context, game_ids, season, endpoint, filename, validate, force, base_url=BASE_URL):
     """ Gets all completed results"""
     season_path = RAW_DIR / str(season)
 
@@ -17,9 +17,9 @@ async def cache_games(context, game_ids, season, endpoint, filename, validate, f
         games_to_fetch, skipped_games = skip_games(game_ids, season_path, filename)
 
     failed_games = []
-    flagged_games = []
+    flagged_games = {}
     if not games_to_fetch:
-        context.log.warning(f"Attempted: {len(game_ids)}, Downloaded: 0, Skipped: {len(skipped_games)}, Failed: {len(failed_games)}, Flagged: {len(flagged_games)}")
+        context.log.info(f"Attempted: {len(game_ids)}, Downloaded: 0, Skipped: {len(skipped_games)}, Failed: {len(failed_games)}, Flagged: {len(flagged_games)}")
         return dg.MaterializeResult(
         metadata={
             "games_attempted": len(game_ids), 
@@ -32,7 +32,7 @@ async def cache_games(context, game_ids, season, endpoint, filename, validate, f
             "flagged_game_ids": flagged_games
         }
     )
-    url_list = [BASE_URL + endpoint.format(game_id=game_id) for game_id in games_to_fetch]
+    url_list = [base_url + endpoint.format(game_id=game_id) for game_id in games_to_fetch]
 
     results = (await fetch_many(url_list, return_exceptions=True))
     context.log.info(f"Fetched {len(games_to_fetch)} {filename} files")
@@ -47,9 +47,11 @@ async def cache_games(context, game_ids, season, endpoint, filename, validate, f
         out_path = RAW_DIR / str(season) / str(game_id) / filename
         write_json_atomic(out_path, result)
 
-        if not validate(result):
-            flagged_games.append(game_id)
-            context.log.info(f"{game_id} flagged: {filename} failed validation")
+        flags = validate(result)
+
+        if flags:
+            flagged_games[game_id] = flags
+            context.log.info(f"{game_id} flagged: {flags}")
         
     context.log.info(f"Attempted: {len(game_ids)}, Downloaded: {len(results) - len(failed_games)}, Skipped: {len(skipped_games)}, Failed: {len(failed_games)}, Flagged: {len(flagged_games)}")
     return dg.MaterializeResult(
