@@ -76,6 +76,21 @@ This runs two assets in order:
 | `raw_schedule` | `data/raw/{season}/schedule_{team}.json` |
 | `raw_pbp` | `data/raw/{season}/{gameId}/pbp.json` for every completed regular season game |
 | `raw_boxscore` | `data/raw/{season}/{gameId}/boxscore.json` for every completed regular season game |
+| `raw_shifts` | `data/raw/{season}/{gameId}/shifts.json` for every completed regular season game |
+
+### Data quality flags
+
+Each asset validates its files and records flagged game IDs in the run metadata. Flagged files are kept, not deleted.
+
+| Flag | Asset | Rule |
+| --- | --- | --- |
+| `EMPTY_PLAYS` | `raw_pbp` | `plays` missing or empty |
+| `MISSING_PLAYER_STATS` | `raw_boxscore` | either team has no forwards in `playerByGameStats` |
+| `EMPTY_SHIFTS` | `raw_shifts` | no shift rows (`typeCode` 517) |
+| `PARTIAL_SHIFTS` | `raw_shifts` | either team has fewer than 18 players with shifts |
+| `TRUNCATED_SHIFTS` | `raw_shifts` | shifts end before the game's last period, or a regulation game's last shift ends before 19:00 |
+
+Shootouts count as period 5 but have no shifts, so shift data is expected to end at period 4. Validated on 2025-26 DET: 82 games, 0 flags. Recent games can return empty shift data until the NHL publishes it, so `EMPTY_SHIFTS` on a game from the last few days usually clears on a later run with `force: true`.
 
 `raw_pbp` skips games already on disk, so re-runs only fetch new games. Files are keyed by season and game ID, so games shared between teams are fetched once. Each run logs attempted, downloaded, skipped, failed, and flagged counts as asset metadata.
 

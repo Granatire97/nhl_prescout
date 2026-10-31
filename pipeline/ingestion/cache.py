@@ -51,7 +51,7 @@ async def cache_games(context, game_ids, season, endpoint, filename, validate, f
 
         if flags:
             flagged_games[game_id] = flags
-            context.log.info(f"{game_id} flagged: {flags}")
+            context.log.warning(f"{game_id} flagged: {flags}")
         
     context.log.info(f"Attempted: {len(game_ids)}, Downloaded: {len(results) - len(failed_games)}, Skipped: {len(skipped_games)}, Failed: {len(failed_games)}, Flagged: {len(flagged_games)}")
     return dg.MaterializeResult(
