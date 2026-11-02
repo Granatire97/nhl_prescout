@@ -19,7 +19,7 @@ An opponent pre-scout tool for NHL coaches and GMs, built on the public NHL API.
 
 ```text
 config/      team and season settings
-data/        raw JSON and DuckDB file (gitignored)
+data/        raw JSON, manifest, and DuckDB file (gitignored)
 pipeline/    Dagster assets: ingestion, metrics, reporting
 dbt/         dbt project: staging, intermediate, marts
 app/         React front end
@@ -69,7 +69,7 @@ dagster dev
 2. Go to **Assets** → **View lineage**.
 3. Click **Materialize all**.
 
-This runs two assets in order:
+This runs five assets in order:
 
 | Asset | Output |
 | --- | --- |
@@ -77,6 +77,7 @@ This runs two assets in order:
 | `raw_pbp` | `data/raw/{season}/{gameId}/pbp.json` for every completed regular season game |
 | `raw_boxscore` | `data/raw/{season}/{gameId}/boxscore.json` for every completed regular season game |
 | `raw_shifts` | `data/raw/{season}/{gameId}/shifts.json` for every completed regular season game |
+| `ingest_manifest` | `ingest.manifest_latest` and `ingest.manifest_games` in `data/pre_scout_warehouse.duckdb` |
 
 ### Data quality flags
 
@@ -92,7 +93,29 @@ Each asset validates its files and records flagged game IDs in the run metadata.
 
 Shootouts count as period 5 but have no shifts, so shift data is expected to end at period 4. Validated on 2025-26 DET: 82 games, 0 flags. Recent games can return empty shift data until the NHL publishes it, so `EMPTY_SHIFTS` on a game from the last few days usually clears on a later run with `force: true`.
 
-`raw_pbp` skips games already on disk, so re-runs only fetch new games. Files are keyed by season and game ID, so games shared between teams are fetched once. Each run logs attempted, downloaded, skipped, failed, and flagged counts as asset metadata.
+`raw_pbp`, `raw_boxscore`, and `raw_shifts` skip games already on disk, so re-runs only fetch new games. Files are keyed by season and game ID, so games shared between teams are fetched once. Each run logs attempted, downloaded, skipped, failed, and flagged counts as asset metadata.
+
+### Ingestion manifest
+
+Every cache run appends one row per game to `data/manifest/{endpoint}.jsonl` (pbp, boxscore, shifts), so run history is never overwritten. Each row has the run ID, run timestamp, season, game ID, endpoint, status (`DOWNLOADED`, `SKIPPED`, `FAILED`), file size, and quality flags. Skipped games are re-validated, so their flags stay current.
+
+`ingest_manifest` runs after all three cache assets and builds two DuckDB tables:
+
+| Table | Grain | Purpose |
+| --- | --- | --- |
+| `ingest.manifest_latest` | game + endpoint | Latest status for each file |
+| `ingest.manifest_games` | game | `usable = 1` only when pbp, boxscore, and shifts are all present, none failed, and none flagged |
+
+Each run logs a summary: total games, complete games, unusable games, and counts per flag.
+
+Unusable games and why:
+
+```sql
+SELECT game_id, all_flags
+FROM ingest.manifest_games
+WHERE usable = 0
+ORDER BY game_id;
+```
 
 ![Dagster lineage](docs/dagster_lineage.png)
 
@@ -104,6 +127,8 @@ ops:
     config:
       force: true
 ```
+
+The same `force` config works for `raw_boxscore` and `raw_shifts`.
 
 ### Front end
 

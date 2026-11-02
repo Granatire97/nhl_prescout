@@ -23,7 +23,7 @@ season = config["season"]
 
 # Manifest Asset
 @dg.asset(deps=[raw_shifts, raw_boxscore, raw_pbp])
-def ingest_manifest(context: dg.AssetExecutionContext) -> None:
+def ingest_manifest(context: dg.AssetExecutionContext) -> dg.MaterializeResult:
         """Function that will be called to load the updated manifest table """
         create_warehouse()
         manifest_glob_path = MANIFEST_DIR / "*.jsonl"
@@ -47,10 +47,31 @@ def ingest_manifest(context: dg.AssetExecutionContext) -> None:
                                 AND COUNT(*) FILTER (WHERE len(flags) > 0) = 0
                                 THEN 1 ELSE 0
                             END AS usable,
-                            LIST(flags) AS all_flags
+                            flatten(LIST(flags)) AS all_flags
                         FROM ingest.manifest_latest
                         GROUP BY season, game_id
                         """)
+            total, complete, unusable = con.execute("""
+                SELECT COUNT(*),
+                    COUNT(*) FILTER (WHERE usable = 1),
+                    COUNT(*) FILTER (WHERE usable = 0)
+                FROM ingest.manifest_games
+            """).fetchone()
+
+            flag_counts = dict(con.execute("""
+                SELECT flag, COUNT(*)
+                FROM ingest.manifest_latest, UNNEST(flags) AS t(flag)
+                GROUP BY flag
+            """).fetchall())
         finally:
              con.close()
 
+        context.log.info(f"Games: {total}, complete: {complete}, unusable: {unusable}, flag_counts: {flag_counts}")
+        return dg.MaterializeResult(
+        metadata={
+            "total_games": total,
+            "fully_completed_games": complete,
+            "unusable": unusable,
+            "flag_counts": flag_counts,
+        }
+    )
