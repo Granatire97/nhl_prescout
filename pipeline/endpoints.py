@@ -1,3 +1,6 @@
+from pathlib import Path
+ROOT = Path(__file__).resolve().parent.parent
+
 # Everything excluding shift charts
 BASE_URL = "https://api-web.nhle.com"
 SCHEDULE_ENDPOINT = "/v1/club-schedule-season/{team}/{season}"
@@ -8,3 +11,6 @@ ROSTER_ENDPOINT = "/v1/roster/{team}/{season}"
 # Shift Charts Information
 BASE_REST_URL = "https://api.nhle.com/stats/rest"
 SHIFTCHART_ENDPOINT = "/en/shiftcharts?cayenneExp=gameId={game_id}"
+
+# Duckdb Warehouse
+DB_PATH = ROOT / "data" / "pre_scout_warehouse.duckdb"

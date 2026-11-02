@@ -3,10 +3,11 @@ from pathlib import Path
 import json
 from pipeline.client import fetch_many
 from pipeline.endpoints import BASE_URL
-from pipeline.storage import write_json_atomic
+from pipeline.storage import write_json_atomic, append_manifest_rows
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW_DIR = ROOT / "data" / "raw"
+MANIFEST_DIR = ROOT / "data" / "manifest"
 
 async def cache_games(context, game_ids, season, endpoint, filename, validate, force, base_url=BASE_URL):
     """ Gets all completed results"""
@@ -15,6 +16,7 @@ async def cache_games(context, game_ids, season, endpoint, filename, validate, f
     run_stats = context.instance.get_run_stats(context.run_id)
     run_ts_unix = run_stats.start_time 
     endpoint_name = filename.removesuffix(".json")
+    manifest_filename = MANIFEST_DIR / f"{endpoint_name}.jsonl"
 
     if force:
         games_to_fetch, skipped_games = game_ids, []
@@ -32,6 +34,7 @@ async def cache_games(context, game_ids, season, endpoint, filename, validate, f
     flagged_games = {}
     if not games_to_fetch:
         context.log.info(f"Attempted: {len(game_ids)}, Downloaded: 0, Skipped: {len(skipped_games)}, Failed: {len(failed_games)}, Flagged: {len(flagged_games)}")
+        append_manifest_rows(rows, manifest_filename)
         return dg.MaterializeResult(
         metadata={
             "games_attempted": len(game_ids), 
@@ -70,6 +73,7 @@ async def cache_games(context, game_ids, season, endpoint, filename, validate, f
         
     context.log.info(f"Attempted: {len(game_ids)}, Downloaded: {len(results) - len(failed_games)}, Skipped: {len(skipped_games)}, Failed: {len(failed_games)}, Flagged: {len(flagged_games)}")
     context.log.info(f"rows: {rows}")
+    append_manifest_rows(rows, manifest_filename)
     return dg.MaterializeResult(
         metadata={
             "games_attempted": len(game_ids), 
