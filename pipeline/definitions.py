@@ -1,7 +1,7 @@
 from dagster import Definitions, load_assets_from_modules
-from pipeline.ingestion import schedule, pbp, boxscore, shifts, manifest
+from pipeline.ingestion import schedule, pbp, boxscore, shifts, manifest, load_raw
 
-all_assets = load_assets_from_modules([schedule, pbp, boxscore, shifts, manifest])
+all_assets = load_assets_from_modules([schedule, pbp, boxscore, shifts, manifest, load_raw])
 
 defs = Definitions(
     assets = all_assets,

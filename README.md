@@ -19,7 +19,7 @@ An opponent pre-scout tool for NHL coaches and GMs, built on the public NHL API.
 
 ```text
 config/      team and season settings
-data/        raw JSON, manifest, and DuckDB file (gitignored)
+data/        raw JSON, manifest, and DuckDB warehouse (gitignored)
 pipeline/    Dagster assets: ingestion, metrics, reporting
 dbt/         dbt project: staging, intermediate, marts
 app/         React front end
@@ -78,6 +78,7 @@ This runs five assets in order:
 | `raw_boxscore` | `data/raw/{season}/{gameId}/boxscore.json` for every completed regular season game |
 | `raw_shifts` | `data/raw/{season}/{gameId}/shifts.json` for every completed regular season game |
 | `ingest_manifest` | `ingest.manifest_latest` and `ingest.manifest_games` in `data/pre_scout_warehouse.duckdb` |
+| `raw_tables` | `raw.schedule`, `raw.pbp_plays`, `raw.boxscore_players`, `raw.shifts` in `data/pre_scout_warehouse.duckdb` |
 
 ### Data quality flags
 
@@ -115,6 +116,30 @@ SELECT game_id, all_flags
 FROM ingest.manifest_games
 WHERE usable = 0
 ORDER BY game_id;
+```
+
+### Raw layer
+
+`raw_tables` runs after `ingest_manifest` and loads the cached JSON into four DuckDB tables in the `raw` schema. Only games with `usable = 1` in `ingest.manifest_games` are loaded by default.
+
+| Table | Grain |
+| --- | --- |
+| `raw.schedule` | one row per game on the team's schedule |
+| `raw.pbp_plays` | one row per play-by-play event |
+| `raw.boxscore_players` | one row per player per game, labeled by `team_side` and `position_group` |
+| `raw.shifts` | one row per shift chart row |
+
+Every row has `game_id` and `loaded_at`. Nested fields are kept as JSON (`details` on plays, `stats` on players), and clock values like `toi` and `timeInPeriod` stay as `mm:ss` text. Type casting happens in dbt staging.
+
+Each load runs in one transaction. A reload deletes the incoming games' rows before inserting, so re-runs replace data instead of duplicating it. Schedule rows are replaced by season and team. If any usable game has no rows in `raw.pbp_plays`, the run fails and rolls back.
+
+To load unusable games too, set this in the launchpad:
+
+```yaml
+ops:
+  raw_tables:
+    config:
+      include_unusable: true
 ```
 
 ![Dagster lineage](docs/dagster_lineage.png)

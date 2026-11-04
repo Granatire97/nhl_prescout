@@ -10,6 +10,7 @@ def create_warehouse(db_path: Path = DB_PATH) -> None:
     try:
         # schemas are namespaces - folders in the database 
         con.execute('CREATE SCHEMA IF NOT EXISTS ingest;')
+        con.execute('CREATE SCHEMA IF NOT EXISTS raw;')
         con.execute('CREATE SCHEMA IF NOT EXISTS staging;')
         con.execute('CREATE SCHEMA IF NOT EXISTS clean;')
         con.execute('CREATE SCHEMA IF NOT EXISTS warehouse;')
@@ -18,7 +19,7 @@ def create_warehouse(db_path: Path = DB_PATH) -> None:
         schemas = con.execute("""
             SELECT schema_name
             FROM information_schema.schemata
-            WHERE schema_name IN ('ingest', 'staging', 'clean', 'warehouse')
+            WHERE schema_name IN ('ingest', 'raw', 'staging', 'clean', 'warehouse')
             ORDER BY schema_name
         
         """).fetchall()
