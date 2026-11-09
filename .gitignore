@@ -9,6 +9,7 @@ app/dist/
 analytics/target/
 analytics/logs/
 analytics/dbt_packages
+analytics/*.concurrent-update-lock
 
 .DS_Store
 
@@ -17,3 +18,4 @@ analytics/dbt_packages
 *.egg-info/
 
 logs/
+

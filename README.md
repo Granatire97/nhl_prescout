@@ -9,7 +9,7 @@ An opponent pre-scout tool for NHL coaches and GMs, built on the public NHL API.
 | Source        | NHL public API (play-by-play, boxscores, shift charts) + NHL EDGE |
 | Ingestion     | Python (HTTP client), raw JSON cached to disk                     |
 | Warehouse     | DuckDB                                                            |
-| Transforms    | dbt (dbt-duckdb)                                                  |
+| Transforms    | dbt v2 (built-in DuckDB adapter)                                  |
 | Orchestration | Dagster (runs ingestion assets and dbt models)                    |
 | Front end     | React + TypeScript, reads the pre-scout JSON contract             |
 | Design        | Figma                                                             |
