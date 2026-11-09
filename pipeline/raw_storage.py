@@ -3,8 +3,10 @@ RAW_PBP =  """
         SELECT 
             id AS game_id,
             season AS season,
+            awayTeam as away_team, 
+            homeTeam as home_team,
             UNNEST(plays) AS play
-        FROM read_json(?, columns:={id: 'BIGINT', season: 'BIGINT', plays: 'JSON[]'})
+        FROM read_json(?, columns:={id: 'BIGINT', season: 'BIGINT', plays: 'JSON[]', awayTeam: 'JSON', homeTeam: 'JSON'})
         )
         SELECT game_id, 
                 season,
@@ -17,6 +19,10 @@ RAW_PBP =  """
                 (play->>'timeRemaining') AS time_remaining,
                 (play->>'situationCode') AS situation_code,
                 (play->>'homeTeamDefendingSide') AS home_team_defending_side,
+                (away_team ->> 'id')::INTEGER AS away_team_id,
+                away_team ->> 'abbrev' AS away_team_abbrev,
+                (home_team ->> 'id')::INTEGER AS home_team_id,
+                home_team ->> 'abbrev' AS home_team_abbrev,
                 play->'details' AS details,
                 current_timestamp AS loaded_at,
                 (play->>'timeInPeriod')::VARCHAR as time_in_period

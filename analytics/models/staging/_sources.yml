@@ -1,0 +1,28 @@
+sources:
+  - name: raw
+    schema: raw
+    tables:
+      - name: pbp_plays
+        description: One row per play by play event, nested details kepts as JSON
+        config:
+          meta:
+            dagster:
+              asset_key: ["raw_tables"]
+      - name: boxscore_players
+        description: One row per boxscore per player, nested details kepts as JSON
+        config:
+          meta:
+            dagster:
+              asset_key: ["raw_tables"]
+      - name: shifts
+        description: One row per shift, nested details kepts as JSON
+        config:
+          meta:
+            dagster:
+              asset_key: ["raw_tables"]
+      - name: schedule
+        description: One row per game per schedule, nested details kepts as JSON
+        config:
+          meta:
+            dagster:
+              asset_key: ["raw_tables"]

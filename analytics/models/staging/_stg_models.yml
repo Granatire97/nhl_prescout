@@ -1,0 +1,25 @@
+models:
+  - name: stg_play_by_play
+    description: Play by Play staging table with new event_key as the identifier
+    config:
+      persist_docs:
+        relation: true
+        columns: true
+    columns:
+      - name: event_key
+        description: Row identifier due to event_id being shared with multiple games
+        data_tests:
+          - not_null
+          - unique
+      - name: game_id
+        description: game_id column that houses the game id number
+        data_tests:
+          - not_null
+      - name: home_team_abbrev
+        description: Abbrevation for the Home Team
+        data_tests:
+          - not_null
+      - name: away_team_abbrev
+        description: Abbrevation for the Away Team
+        data_tests:
+          - not_null
