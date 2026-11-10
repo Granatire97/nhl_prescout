@@ -108,5 +108,7 @@ models:
         description: The start game in seconds
       - name: end_game_seconds
         description: The end game in seconds
+      - name: duration_seconds
+        description: Shift length in seconds, end_period_seconds minus start_period_seconds (not the raw duration field)
       - name: loaded_at
         description: Column that houses when the table was loaded
