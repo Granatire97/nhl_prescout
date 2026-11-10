@@ -23,8 +23,15 @@ class RawConfig(dg.Config):
     include_unusable: bool = False
 
 # Raw Tables Asset
-@dg.asset(deps=[ingest_manifest])
-def raw_tables(context: dg.AssetExecutionContext, config:RawConfig) -> dg.MaterializeResult:
+RAW_TABLE_NAMES = ["pbp_plays", "boxscore_players", "shifts", "schedule"]
+
+@dg.multi_asset(
+    specs=[
+        dg.AssetSpec(["raw", name], deps=[ingest_manifest], skippable=True)
+        for name in RAW_TABLE_NAMES
+    ]
+)
+def raw_tables(context: dg.AssetExecutionContext, config: RawConfig):
     """
     Function that will be called nightly to load all 4 tables
     """
@@ -88,6 +95,7 @@ def raw_tables(context: dg.AssetExecutionContext, config:RawConfig) -> dg.Materi
         pbp_row_counts = con.execute("SELECT count(*) FROM raw.pbp_plays").fetchone()[0]
         boxscore_row_counts = con.execute("SELECT count(*) FROM raw.boxscore_players").fetchone()[0]
         shifts_row_counts = con.execute("SELECT count(*) FROM raw.shifts").fetchone()[0]
+        schedule_row_count = con.execute("SELECT count(*) FROM raw.schedule").fetchone()[0]
 
         con.execute("COMMIT")
     except Exception:
@@ -95,15 +103,10 @@ def raw_tables(context: dg.AssetExecutionContext, config:RawConfig) -> dg.Materi
         raise
     finally:
         con.close()
-    return dg.MaterializeResult(
-        metadata={
-            "games_loaded": len(games),
-            "pbp_row_counts": pbp_row_counts,
-            "boxscore_row_counts": boxscore_row_counts,
-            "shifts_row_counts": shifts_row_counts,
-            "missing_pbp_games": len(validation_query_results)
-        }
-    )
+    yield dg.MaterializeResult(asset_key=["raw", "pbp_plays"], metadata={"row_count": pbp_row_counts, "games_loaded": len(games), "missing_pbp_games": len(validation_query_results)})
+    yield dg.MaterializeResult(asset_key=["raw", "boxscore_players"], metadata={"row_count": boxscore_row_counts})
+    yield dg.MaterializeResult(asset_key=["raw", "shifts"], metadata={"row_count": shifts_row_counts})
+    yield dg.MaterializeResult(asset_key=["raw", "schedule"], metadata={"row_count": schedule_row_count})
 
 def load_game_table(con, select_sql, paths, temp_table_name, table_name):
     con.execute(f"""

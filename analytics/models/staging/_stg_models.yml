@@ -23,3 +23,30 @@ models:
         description: Abbrevation for the Away Team
         data_tests:
           - not_null
+  - name: stg_schedule
+    description: Schedule staging table
+    config:
+      persist_docs:
+        relation: true
+        columns: true
+    columns:
+      - name: game_id
+        description: Row identifier due to each game on the schedule
+        data_tests:
+          - not_null
+          - unique
+      - name: home_team_abbrev
+        description: Abbrevation for the Home Team
+        data_tests:
+          - not_null
+      - name: away_team_abbrev
+        description: Abbrevation for the Away Team
+        data_tests:
+          - not_null
+      - name: game_type
+        description: 1 preseason, 2 regular season, 3 playoffs
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3]
+                quote: false
