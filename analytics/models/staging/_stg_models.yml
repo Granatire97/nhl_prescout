@@ -70,3 +70,43 @@ models:
         description: The venue of where the game was located
       - name: loaded_at
         description: The time the row was added to the table
+  - name: stg_shifts
+    description: Shifts staging table
+    config:
+      persist_docs:
+        relation: true
+        columns: true
+    columns:
+      - name: shift_id
+        description: Column that houses the shift id number
+        data_tests:
+          - not_null
+          - unique
+      - name: game_id
+        description: Column that houses the game id number
+        data_tests:
+          - not_null
+      - name: player_id
+        description: Column that houses the player id number
+        data_tests:
+          - not_null
+      - name: team_id
+        description: Column that houses the team id number
+      - name: team_abbrev
+        description: Column that houses the team abbrevation
+      - name: period
+        description: Column that houses the period number
+        data_tests:
+          - not_null
+      - name: shift_number
+        description: Column that shows the shift number
+      - name: start_period_seconds
+        description: The start period in seconds
+      - name: end_period_seconds
+        description: The end period in seconds
+      - name: start_game_seconds
+        description: The start game in seconds
+      - name: end_game_seconds
+        description: The end game in seconds
+      - name: loaded_at
+        description: Column that houses when the table was loaded
