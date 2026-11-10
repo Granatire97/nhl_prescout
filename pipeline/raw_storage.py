@@ -125,7 +125,7 @@ RAW_SCHEDULE = """
             (game->>'gameState') AS game_state,
             (game->'awayTeam'->>'abbrev') AS away_team_abbrev,
             (game->'homeTeam'->>'abbrev') AS home_team_abbrev,
-            (game->'startTimeUTC') AS start_time_utc,
+            (game->>'startTimeUTC') AS start_time_utc,
             (game->'awayTeam'->>'id')::INTEGER AS away_team_id,
             (game->'homeTeam'->>'id')::INTEGER AS home_team_id,
             (game->'venue'->>'default') AS venue,
