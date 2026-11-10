@@ -50,3 +50,23 @@ models:
               arguments:
                 values: [1, 2, 3]
                 quote: false
+      - name: season
+        description: Column that stores the season of the game
+      - name: game_date
+        description: Column that has the game dates
+        data_tests:
+          - not_null
+      - name: start_time_utc
+        description: The start time in UTC format
+      - name: game_state
+        description: The statement of the game to determine if its over
+      - name: is_completed
+        description: Column that determines if the game was completed or not
+      - name: home_team_id
+        description: Column that stores the id of the home team
+      - name: away_team_id
+        description: Column that stores the id of the away team
+      - name: venue
+        description: The venue of where the game was located
+      - name: loaded_at
+        description: The time the row was added to the table
