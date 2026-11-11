@@ -5,7 +5,7 @@ from typing import List, Iterable
 from pipeline.ingestion.manifest import ingest_manifest
 import duckdb
 from pipeline.endpoints import DB_PATH
-from pipeline.raw_storage import RAW_PBP, RAW_SHIFTS, RAW_BOXSCORE, RAW_SCHEDULE
+from pipeline.raw_storage import RAW_PBP, RAW_SHIFTS, RAW_BOXSCORE, RAW_SCHEDULE, RAW_ROSTER_SPOTS
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG_PATH = ROOT / "config" / "settings.yaml"
@@ -23,7 +23,7 @@ class RawConfig(dg.Config):
     include_unusable: bool = False
 
 # Raw Tables Asset
-RAW_TABLE_NAMES = ["pbp_plays", "boxscore_players", "shifts", "schedule"]
+RAW_TABLE_NAMES = ["pbp_plays", "boxscore_players", "shifts", "schedule", "roster_spots"]
 
 @dg.multi_asset(
     specs=[
@@ -68,6 +68,7 @@ def raw_tables(context: dg.AssetExecutionContext, config: RawConfig):
         # starting transaction 
         con.execute("BEGIN TRANSACTION")
         load_game_table(con, select_sql=RAW_PBP, paths=pbp_paths, temp_table_name="incoming_raw_pbp", table_name="raw.pbp_plays")
+        load_game_table(con, select_sql=RAW_ROSTER_SPOTS, paths=pbp_paths, temp_table_name="incoming_raw_roster_spots", table_name="raw.roster_spots")
         load_game_table(con, select_sql=RAW_BOXSCORE, paths=boxscore_paths, temp_table_name="incoming_raw_boxscore", table_name="raw.boxscore_players")
         load_game_table(con, select_sql=RAW_SHIFTS, paths=shifts_paths, temp_table_name="incoming_raw_shifts", table_name="raw.shifts")
         load_schedule_table(con, select_sql=RAW_SCHEDULE, schedule_path=schedule_path, season=season, team=team, temp_table_name="incoming_raw_schedule", table_name="raw.schedule")
@@ -96,6 +97,7 @@ def raw_tables(context: dg.AssetExecutionContext, config: RawConfig):
         boxscore_row_counts = con.execute("SELECT count(*) FROM raw.boxscore_players").fetchone()[0]
         shifts_row_counts = con.execute("SELECT count(*) FROM raw.shifts").fetchone()[0]
         schedule_row_count = con.execute("SELECT count(*) FROM raw.schedule").fetchone()[0]
+        roster_row_count = con.execute("SELECT count(*) FROM raw.roster_spots").fetchone()[0]
 
         con.execute("COMMIT")
     except Exception:
@@ -104,6 +106,7 @@ def raw_tables(context: dg.AssetExecutionContext, config: RawConfig):
     finally:
         con.close()
     yield dg.MaterializeResult(asset_key=["raw", "pbp_plays"], metadata={"row_count": pbp_row_counts, "games_loaded": len(games), "missing_pbp_games": len(validation_query_results)})
+    yield dg.MaterializeResult(asset_key=["raw", "roster_spots"], metadata={"row_count": roster_row_count, "games_loaded": len(games), "missing_pbp_games": len(validation_query_results)})
     yield dg.MaterializeResult(asset_key=["raw", "boxscore_players"], metadata={"row_count": boxscore_row_counts})
     yield dg.MaterializeResult(asset_key=["raw", "shifts"], metadata={"row_count": shifts_row_counts})
     yield dg.MaterializeResult(asset_key=["raw", "schedule"], metadata={"row_count": schedule_row_count})

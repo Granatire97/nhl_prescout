@@ -141,3 +141,29 @@ RAW_SCHEDULE = """
             current_timestamp AS loaded_at,
         FROM schedule_info
 """
+RAW_ROSTER_SPOTS =  """
+    WITH roster_info AS (
+        SELECT 
+            id AS game_id,
+            season AS season,
+            awayTeam as away_team, 
+            homeTeam as home_team,
+            UNNEST(rosterSpots) AS roster
+        FROM read_json(?, columns:={id: 'BIGINT', season: 'BIGINT', rosterSpots: 'JSON[]', awayTeam: 'JSON', homeTeam: 'JSON'})
+        )
+        SELECT 
+            game_id,
+            season,
+            (roster->>'teamId')::INTEGER AS team_id,
+            (roster->>'playerId')::BIGINT AS player_id,
+            roster->'firstName'->>'default' AS first_name,
+            roster->'lastName'->>'default' AS last_name,
+            (roster->>'sweaterNumber')::INTEGER as jersey_number,
+            roster->>'positionCode' AS position,
+            CASE 
+                WHEN (away_team ->> 'id')::INTEGER = team_id THEN away_team ->> 'abbrev'
+                WHEN (home_team ->> 'id')::INTEGER = team_id THEN home_team ->> 'abbrev'
+            END AS team_abbrev,
+            current_timestamp AS loaded_at
+        FROM roster_info
+"""

@@ -23,6 +23,7 @@ models:
         description: Abbrevation for the Away Team
         data_tests:
           - not_null
+
   - name: stg_schedule
     description: Schedule staging table
     config:
@@ -70,6 +71,7 @@ models:
         description: The venue of where the game was located
       - name: loaded_at
         description: The time the row was added to the table
+
   - name: stg_shifts
     description: Shifts staging table
     config:
@@ -112,6 +114,7 @@ models:
         description: Shift length in seconds, end_period_seconds minus start_period_seconds (not the raw duration field)
       - name: loaded_at
         description: Column that houses when the table was loaded
+
   - name: stg_boxscore_players
     description: Boxscore stats for players staging table
     data_tests:
@@ -191,3 +194,52 @@ models:
         description: Stat column for game decision for the goalies
       - name: loaded_at
         description: Time the data was loaded in the table
+
+  - name: stg_roster_spots
+    description: The roster for both teams in each game
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [game_id, player_id]
+    config:
+      persist_docs:
+        relation: true
+        columns: true
+    columns:
+      - name: game_id
+        description: game_id column that houses the game id number
+        data_tests:
+          - not_null
+      - name: season
+        description: season column that houses the season of the game roster
+        data_tests:
+          - not_null
+      - name: team_id
+        description: team_id column that houses the team id number
+        data_tests:
+          - not_null
+      - name: team_abbrev
+        description: Abbrevation for the player team
+        data_tests:
+          - not_null
+      - name: player_id
+        description: team_id column that houses the team id number
+        data_tests:
+          - not_null
+      - name: first_name
+        description: Column that houses the players first name
+      - name: last_name
+        description: Column that houses the players last name
+      - name: player_name
+        description: Column that houses the players full name
+      - name: jersey_number
+        description: Column that houses the players jersey number
+      - name: position
+        description: Column that houses the players position
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["C", "L", "R", "D", "G"]
+                quote: true
+      - name: loaded_at
+        description: Column that houses when the data was loaded in the table

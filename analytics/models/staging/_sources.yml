@@ -13,3 +13,6 @@ sources:
 
       - name: schedule
         description: One row per game per schedule, nested details kepts as JSON
+
+      - name: roster_spots
+        description: One row per game per roster, nested details kepts as JSON
