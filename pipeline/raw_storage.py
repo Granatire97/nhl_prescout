@@ -33,49 +33,58 @@ RAW_BOXSCORE = """
     WITH boxscore_info AS (
         SELECT 
             id AS game_id,
+            awayTeam AS away_team,
+            homeTeam AS home_team,
             playerByGameStats AS player_game_stats
-        FROM read_json(?, columns:={id: 'BIGINT', playerByGameStats: 'JSON'})
+        FROM read_json(?, columns:={id: 'BIGINT', awayTeam: 'JSON', homeTeam: 'JSON', playerByGameStats: 'JSON'})
         ),
         players AS (
             SELECT game_id,
                 'away' AS team_side,
                 'forwards' as position_group,
+                away_team ->> 'abbrev' AS team_abbrev,
                 UNNEST((player_game_stats->'awayTeam'->'forwards')::JSON[]) AS player
             FROM boxscore_info
             UNION ALL
             SELECT game_id,
                 'away' AS team_side,
                 'defense' as position_group,
+                away_team ->> 'abbrev' AS team_abbrev,
                 UNNEST((player_game_stats->'awayTeam'->'defense')::JSON[]) AS player
             FROM boxscore_info
             UNION ALL
             SELECT game_id,
                 'away' AS team_side,
                 'goalies' as position_group,
+                away_team ->> 'abbrev' AS team_abbrev,
                 UNNEST((player_game_stats->'awayTeam'->'goalies')::JSON[]) AS player
             FROM boxscore_info
             UNION ALL
             SELECT game_id,
                 'home' AS team_side,
                 'forwards' as position_group,
+                home_team ->> 'abbrev' AS team_abbrev,
                 UNNEST((player_game_stats->'homeTeam'->'forwards')::JSON[]) AS player
             FROM boxscore_info
             UNION ALL
             SELECT game_id,
                 'home' AS team_side,
                 'defense' as position_group,
+                home_team ->> 'abbrev' AS team_abbrev,
                 UNNEST((player_game_stats->'homeTeam'->'defense')::JSON[]) AS player
             FROM boxscore_info
             UNION ALL
             SELECT game_id,
                 'home' AS team_side,
                 'goalies' as position_group,
+                home_team ->> 'abbrev' AS team_abbrev,
                 UNNEST((player_game_stats->'homeTeam'->'goalies')::JSON[]) AS player
             FROM boxscore_info
         )
         SELECT
             game_id, 
             team_side,
+            team_abbrev,
             position_group,
             (player->>'playerId')::BIGINT AS player_id,
             (player->'name'->>'default') AS player_name,

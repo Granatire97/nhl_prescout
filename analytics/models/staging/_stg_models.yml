@@ -112,3 +112,80 @@ models:
         description: Shift length in seconds, end_period_seconds minus start_period_seconds (not the raw duration field)
       - name: loaded_at
         description: Column that houses when the table was loaded
+  - name: stg_boxscore_players
+    description: Boxscore stats for players staging table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [game_id, player_id]
+    config:
+      persist_docs:
+        relation: true
+        columns: true
+    columns:
+      - name: game_id
+        description: Column to house the game id of the row
+        data_tests:
+          - not_null
+      - name: is_home
+        description: Determining if the player was home
+      - name: team_abbrev
+        description: Column to house the team abbrevation of the player of the row
+        data_tests:
+          - not_null
+      - name: player_id
+        description: Column to house the player id of the row
+        data_tests:
+          - not_null
+      - name: player_name
+        description: The player name
+      - name: position_group
+        description: The position group of the player. Only F, D, or G
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["F", "D", "G"]
+                quote: true
+      - name: jersey_number
+        description: The jersey number of the player
+      - name: position
+        description: The position of the player
+      - name: goals
+        description: Stat column for goals
+      - name: assists
+        description: Stat column for assists
+      - name: points
+        description: Stat column for points
+      - name: toi_seconds
+        description: Stat column for toi seconds
+      - name: plus_minus
+        description: Stat column for plus or minus
+      - name: penalty_minutes
+        description: Stat column for penalty minutes
+      - name: hits
+        description: Stat column for hits
+      - name: shots_on_goal
+        description: Stat column for shots on goal
+      - name: blocked_shots
+        description: Stat column for blocked shots
+      - name: giveaways
+        description: Stat column for giveaways
+      - name: takeaways
+        description: Stat column for takeaways
+      - name: fo_pct
+        description: Stat column for faceoff percentage
+      - name: ppg
+        description: Stat column for power play goals
+      - name: saves
+        description: Stat column for saves for goalies
+      - name: shots_against
+        description: Stat column for shots against for goalies
+      - name: goals_against
+        description: Stat column for goals against for goalies
+      - name: save_pct
+        description: Stat column for save percentage
+      - name: game_decision
+        description: Stat column for game decision for the goalies
+      - name: loaded_at
+        description: Time the data was loaded in the table
