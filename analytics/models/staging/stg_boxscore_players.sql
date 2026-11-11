@@ -24,6 +24,7 @@ SELECT
     (stats->>'assists')::INT AS assists,
     (stats->>'points')::INT AS points,
     {{ mmss_to_seconds('toi') }} AS toi_seconds,
+    (stats->>'shifts')::INT AS number_of_shifts,
     (stats->>'plusMinus')::INT AS plus_minus,
     (stats->>'pim')::INT AS penalty_minutes,
     (stats->>'hits')::INT AS hits,
@@ -31,12 +32,12 @@ SELECT
     (stats->>'blockedShots')::INT AS blocked_shots,
     (stats->>'giveaways')::INT AS giveaways,
     (stats->>'takeaways')::INT AS takeaways,
-    ROUND((stats->>'faceoffWinningPctg')::DOUBLE, 2) AS fo_pct,
+    ROUND((stats->>'faceoffWinningPctg')::DOUBLE, 3) AS fo_pct,
     (stats->>'powerPlayGoals')::INT AS ppg,
     (stats->>'saves')::INT AS saves,
     (stats->>'shotsAgainst')::INT AS shots_against,
     (stats->>'goalsAgainst')::INT AS goals_against,
-    ROUND((stats->>'savePctg')::DOUBLE, 2) AS save_pct,
+    ROUND((stats->>'savePctg')::DOUBLE, 3) AS save_pct,
     stats->>'decision' AS game_decision,
     current_timestamp AS loaded_at
 FROM {{source('raw', 'boxscore_players') }}
