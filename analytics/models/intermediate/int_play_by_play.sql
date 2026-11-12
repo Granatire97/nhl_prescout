@@ -53,6 +53,7 @@ SELECT
     END AS is_empty_net_against,
     CASE
         WHEN is_home IS NULL THEN NULL
+        WHEN event_skaters = 1 OR opp_skaters = 1 THEN 'PS'
         WHEN event_skaters = 6 THEN 'EA'
         WHEN opp_skaters = 6 THEN 'EN'
         WHEN event_skaters > opp_skaters THEN 'PP'

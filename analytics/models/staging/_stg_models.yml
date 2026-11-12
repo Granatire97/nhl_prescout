@@ -15,6 +15,14 @@ models:
         description: game_id column that houses the game id number
         data_tests:
           - not_null
+
+      - name: period_type
+        description: Period type (OT or REG).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["OT", "SO", "REG"]
       - name: home_team_abbrev
         description: Abbrevation for the Home Team
         data_tests:
