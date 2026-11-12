@@ -125,7 +125,7 @@ models:
         description: Captures a boolean when the opponent net is empty
 
       - name: strength_state
-        description: Categorized manpower state relative to the event team (EV, PP, PK, EA, EN).
+        description: Categorized manpower state relative to the event team (EV, PP, PS, PK, EA, EN).
         data_tests:
           - accepted_values:
               arguments:
