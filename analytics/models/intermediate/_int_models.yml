@@ -32,6 +32,14 @@ models:
         data_tests:
           - not_null
 
+      - name: period_type
+        description: Period type (OT or REG).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["OT", "REG"]
+
       - name: time_in_period
         description: Elapsed time in the current period formatted as MM:SS.
 
@@ -84,14 +92,14 @@ models:
         data_tests:
           - accepted_values:
               arguments:
-                values: [3, 4, 5, 6]
+                values: [0, 1, 3, 4, 5, 6]
 
       - name: home_skaters
         description: Number of non-goalie skaters on the ice for the home team.
         data_tests:
           - accepted_values:
               arguments:
-                values: [3, 4, 5, 6]
+                values: [0, 1, 3, 4, 5, 6]
 
       - name: is_home
         description: Boolean indicating whether the event was performed by the home team (NULL when event_team_abbrev is NULL).
@@ -104,14 +112,17 @@ models:
         data_tests:
           - accepted_values:
               arguments:
-                values: [3, 4, 5, 6]
+                values: [0, 1, 3, 4, 5, 6]
 
       - name: opp_skaters
         description: Number of skaters on the ice for the opposing team.
         data_tests:
           - accepted_values:
               arguments:
-                values: [3, 4, 5, 6]
+                values: [0, 1, 3, 4, 5, 6]
+
+      - name: is_empty_net_against
+        description: Captures a boolean when the net against the event team is empty
 
       - name: strength_state
         description: Categorized manpower state relative to the event team (EV, PP, PK, EA, EN).

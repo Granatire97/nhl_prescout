@@ -10,7 +10,8 @@ SELECT
     sort_order,
     game_id,
     event_id,
-    period, 
+    period,
+    period_type,
     time_in_period,
     {{ mmss_to_seconds('time_in_period') }} AS event_period_seconds,
     (period - 1) * 1200 + event_period_seconds AS event_game_seconds,
@@ -44,6 +45,12 @@ SELECT
         WHEN is_home THEN away_skaters
         ELSE home_skaters
     END AS opp_skaters,
+    CASE 
+        WHEN is_home IS NULL THEN NULL
+        WHEN is_home AND away_goalie_in_net = 0 THEN true
+        WHEN is_home = FALSE AND home_goalie_in_net = 0 THEN true 
+        ELSE false
+    END AS is_empty_net_against,
     CASE
         WHEN is_home IS NULL THEN NULL
         WHEN event_skaters = 6 THEN 'EA'
@@ -55,7 +62,6 @@ SELECT
     event_skaters || 'v' || opp_skaters AS skater_state,
     current_timestamp AS loaded_at
 FROM {{ ref("stg_play_by_play")}}
-WHERE COALESCE(situation_code, '') <> '0101' 
-    AND COALESCE(situation_code, '') <> '1010'
+WHERE COALESCE(period_type, '') <> 'SO' 
    AND COALESCE(type_desc_key, '') <> 'game-end'
 
