@@ -19,6 +19,9 @@ SELECT
     home_team_abbrev,
     away_team_abbrev,
     event_team_abbrev,
+    home_team_defending_side,
+    (details->>'xCoord')::INTEGER AS x_raw,
+    (details->>'yCoord')::INTEGER AS y_raw,
     details,
     situation_code,
     CASE
@@ -61,6 +64,26 @@ SELECT
     ELSE 'EV'
     END AS strength_state,
     event_skaters || 'v' || opp_skaters AS skater_state,
+    CASE 
+        WHEN is_home IS NULL OR home_team_defending_side IS NULL THEN NULL 
+        WHEN (is_home AND home_team_defending_side = 'left') OR (is_home = false AND home_team_defending_side = 'right') THEN x_raw
+        ELSE -x_raw
+    END AS x_norm,
+        CASE 
+        WHEN is_home IS NULL OR home_team_defending_side IS NULL THEN NULL 
+        WHEN (is_home AND home_team_defending_side = 'left') OR (is_home = false AND home_team_defending_side = 'right') THEN y_raw
+        ELSE -y_raw
+    END AS y_norm,
+    CASE 
+        WHEN type_desc_key IN ('shot-on-goal', 'missed-shot', 'blocked-shot', 'goal') THEN
+            ROUND(SQRT(POWER(89 - x_norm, 2) + POWER(y_norm, 2)), 3)
+        ELSE NULL 
+    END AS shot_distance,
+    CASE 
+        WHEN type_desc_key IN ('shot-on-goal', 'missed-shot', 'blocked-shot', 'goal') THEN
+            ROUND(DEGREES(ATAN2(ABS(y_norm), 89 - x_norm)), 3)
+        ELSE NULL 
+    END AS shot_angle,
     current_timestamp AS loaded_at
 FROM {{ ref("stg_play_by_play")}}
 WHERE COALESCE(period_type, '') <> 'SO' 

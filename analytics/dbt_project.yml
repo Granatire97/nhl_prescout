@@ -18,3 +18,6 @@ models:
     intermediate:
       +materialized: table
       +schema: clean
+    marts:
+      +materialized: table
+      +schema: warehouse

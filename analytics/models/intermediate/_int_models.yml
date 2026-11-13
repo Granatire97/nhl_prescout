@@ -67,6 +67,25 @@ models:
       - name: event_team_abbrev
         description: Three-letter abbreviation of the team credited with the event (NULL for neutral events like period-start).
 
+      - name: home_team_defending_side
+        description: The side the home team is defending
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["left", "right"]
+
+      - name: x_raw
+        description: X coordinate of the event
+
+      - name: y_raw
+        description: Y coordinate of the event
+
+      - name: x_norm
+        description: Normalized X coordinate of the event
+
+      - name: y_norm
+        description: Normalized Y coordinate of the event
+
       - name: details
         description: Nested JSON/struct containing event-specific metadata (coordinates, player IDs, shot types, etc.).
 
@@ -133,6 +152,12 @@ models:
 
       - name: skater_state
         description: Formatted manpower matchup string from the event team perspective (e.g., 5v5, 5v4).
+
+      - name: shot_distance
+        description: The distance of the shot from the goalies perspective
+
+      - name: shot_angle
+        description: The angle of the shot within the zone
 
       - name: loaded_at
         description: Timestamp indicating when the record was transformed and loaded by dbt.

@@ -23,6 +23,7 @@ SELECT
         ELSE NULL
     END AS event_team_abbrev,
     details,
+    home_team_defending_side,
     current_timestamp AS loaded_at
 FROM {{source('raw', 'pbp_plays')}}
 
