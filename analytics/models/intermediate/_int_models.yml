@@ -11,27 +11,22 @@ models:
         data_tests:
           - unique
           - not_null
-
       - name: sort_order
         description: Sequential integer indicating the chronological order of events within a game.
         data_tests:
           - not_null
-
       - name: game_id
         description: Unique NHL API identifier for the game.
         data_tests:
           - not_null
-
       - name: event_id
         description: NHL API event identifier within a given game.
         data_tests:
           - not_null
-
       - name: period
         description: Period number (1-3 for regulation, 4+ for overtime/shootout).
         data_tests:
           - not_null
-
       - name: period_type
         description: Period type (OT or REG).
         data_tests:
@@ -39,127 +34,150 @@ models:
           - accepted_values:
               arguments:
                 values: ["OT", "REG"]
-
       - name: time_in_period
         description: Elapsed time in the current period formatted as MM:SS.
-
       - name: event_period_seconds
         description: Elapsed time in the current period converted to integer seconds.
-
       - name: event_game_seconds
         description: Total elapsed game time in seconds across periods.
-
       - name: type_desc_key
         description: Event type identifier from the NHL API (e.g., shot-on-goal, hit, faceoff, stoppage).
         data_tests:
           - not_null
-
       - name: home_team_abbrev
         description: Three-letter abbreviation for the home team.
         data_tests:
           - not_null
-
       - name: away_team_abbrev
         description: Three-letter abbreviation for the away team.
         data_tests:
           - not_null
-
       - name: event_team_abbrev
         description: Three-letter abbreviation of the team credited with the event (NULL for neutral events like period-start).
-
       - name: home_team_defending_side
         description: The side the home team is defending
         data_tests:
           - accepted_values:
               arguments:
                 values: ["left", "right"]
-
       - name: x_raw
         description: X coordinate of the event
-
       - name: y_raw
         description: Y coordinate of the event
-
       - name: x_norm
         description: Normalized X coordinate of the event
-
       - name: y_norm
         description: Normalized Y coordinate of the event
-
       - name: details
         description: Nested JSON/struct containing event-specific metadata (coordinates, player IDs, shot types, etc.).
-
       - name: situation_code
         description: Four-digit NHL code representing goalie presence and skater counts (AwayGoalie, AwaySkaters, HomeSkaters, HomeGoalie).
-
       - name: away_goalie_in_net
         description: Flag indicating if the away goalie is on the ice (1 = in net, 0 = pulled/empty net).
         data_tests:
           - accepted_values:
               arguments:
                 values: [0, 1]
-
       - name: home_goalie_in_net
         description: Flag indicating if the home goalie is on the ice (1 = in net, 0 = pulled/empty net).
         data_tests:
           - accepted_values:
               arguments:
                 values: [0, 1]
-
       - name: away_skaters
         description: Number of non-goalie skaters on the ice for the away team.
         data_tests:
           - accepted_values:
               arguments:
                 values: [0, 1, 3, 4, 5, 6]
-
       - name: home_skaters
         description: Number of non-goalie skaters on the ice for the home team.
         data_tests:
           - accepted_values:
               arguments:
                 values: [0, 1, 3, 4, 5, 6]
-
       - name: is_home
         description: Boolean indicating whether the event was performed by the home team (NULL when event_team_abbrev is NULL).
-
       - name: opponent
         description: Three-letter abbreviation of the opposing team relative to the event team.
-
       - name: event_skaters
         description: Number of skaters on the ice for the event team.
         data_tests:
           - accepted_values:
               arguments:
                 values: [0, 1, 3, 4, 5, 6]
-
       - name: opp_skaters
         description: Number of skaters on the ice for the opposing team.
         data_tests:
           - accepted_values:
               arguments:
                 values: [0, 1, 3, 4, 5, 6]
-
       - name: is_empty_net_against
         description: Captures a boolean when the opponent net is empty
-
       - name: strength_state
         description: Categorized manpower state relative to the event team (EV, PP, PS, PK, EA, EN).
         data_tests:
           - accepted_values:
               arguments:
                 values: ["EV", "PP", "PS", "PK", "EA", "EN"]
-
       - name: skater_state
         description: Formatted manpower matchup string from the event team perspective (e.g., 5v5, 5v4).
-
       - name: shot_distance
         description: The distance of the shot from the goalies perspective
-
       - name: shot_angle
         description: The angle of the shot within the zone
-
       - name: loaded_at
         description: Timestamp indicating when the record was transformed and loaded by dbt.
         data_tests:
           - not_null
+  - name: int_events_on_ice
+    description: Players on the ice for a certain event
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [event_key, player_id]
+    config:
+      persist_docs:
+        relation: true
+        columns: true
+    columns:
+      - name: event_ice_key
+        description:
+        data_tests:
+          - not_null
+      - name: event_key
+        description: The column that stores the event_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_play_by_play')
+                field: event_key
+      - name: sort_order
+        description: The column that stores the sort order
+      - name: game_id
+        description: The column that stores the game id
+      - name: event_game_seconds
+        description: The game seconds of the event
+      - name: type_desc_key
+        description: A description of what the event is
+      - name: is_event_team
+        description: Boolean to determine if that row belongs to the event team
+      - name: player_id
+        description: Player id of the event
+        data_tests:
+          - not_null
+      - name: team_id
+        description: Team id of the player
+        data_tests:
+          - not_null
+      - name: team_abbrev
+        description: Team abbrev of the player
+      - name: shift_id
+        description: Shift id of the player
+      - name: position
+        description: The position of the player
+      - name: is_goalie
+        description: Boolean to determine if the player is the goalie or not
+      - name: loaded_at
+        description: The time the row was loaded into the table
