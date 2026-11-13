@@ -35,6 +35,8 @@ models:
         description: The last name of the player
       - name: player_name
         description: The player name
+        data_tests:
+          - not_null
       - name: jersey_number
         description: Column that holds the latest jersey number value for the player
       - name: position
@@ -42,7 +44,7 @@ models:
         data_tests:
           - not_null
       - name: games_played
-        description: Column that holds the number of games the player was dressed for
+        description: Column that holds the number of games the player was dressed for. Counts only games in loaded team schedules.
       - name: all_teams
         description: Column that holds a string with all the teams a player played for a certain season
       - name: loaded_at
