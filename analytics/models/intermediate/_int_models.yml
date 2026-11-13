@@ -167,6 +167,10 @@ models:
         description: Player id of the event
         data_tests:
           - not_null
+      - name: jersey_number
+        description: Player jersey number of the event
+        data_tests:
+          - not_null
       - name: team_id
         description: Team id of the player
         data_tests:
