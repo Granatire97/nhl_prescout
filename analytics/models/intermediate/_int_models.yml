@@ -186,7 +186,7 @@ models:
       - name: loaded_at
         description: The time the row was loaded into the table
   - name: int_on_ice_validation
-    description:
+    description: Validation table to help check the match rate of expected vs actual skaters and players dressed over 6 player for either team.
     config:
       persist_docs:
         relation: true
@@ -213,7 +213,7 @@ models:
       - name: expected_home_skaters
         description: The expected number of home skaters
       - name: expected_home_goalie
-        description: The actual number of home goalie
+        description: The expected number of home goalie
       - name: expected_away_skaters
         description: The expected number of away skaters
       - name: expected_away_goalie
