@@ -193,30 +193,30 @@ models:
         columns: true
     columns:
       - name: event_key
-        description: ""
+        description: Event key of the row
       - name: game_id
-        description: ""
+        description: The game id of the row
       - name: type_desc_key
-        description: ""
+        description: The description of the event
       - name: strength_state
-        description: ""
+        description: The strength state of the game
       - name: situation_code
-        description: ""
+        description: The situation code to describe whos on the ice
       - name: actual_home_skaters
-        description: ""
+        description: The actual number of home skaters
       - name: actual_home_goalie
-        description: ""
+        description: The actual number of home goalie
       - name: actual_away_skaters
-        description: ""
+        description: The actual number of away skaters
       - name: actual_away_goalie
-        description: ""
+        description: The actual number of away goalie
       - name: expected_home_skaters
-        description: ""
+        description: The expected number of home skaters
       - name: expected_home_goalie
-        description: ""
+        description: The actual number of home goalie
       - name: expected_away_skaters
-        description: ""
+        description: The expected number of away skaters
       - name: expected_away_goalie
-        description: ""
+        description: The expected number of away goalie
       - name: is_match
-        description: ""
+        description: Boolean to determine if the actual number of skaters is equal to the expected number of skaters

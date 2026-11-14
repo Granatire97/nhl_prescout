@@ -4,7 +4,7 @@ WITH counts AS (
         count(*) AS totals,
         count(*) FILTER (WHERE is_match) AS match_rate
     FROM {{ ref('int_on_ice_validation') }}
-    WHERE type_desc_key NOT IN ('faceoff', 'period-end', 'period-start')
+    WHERE (type_desc_key NOT IN ('faceoff', 'period-end', 'period-start')) AND (strength_state <> 'PS')
 ),
 percents AS (
     SELECT 
