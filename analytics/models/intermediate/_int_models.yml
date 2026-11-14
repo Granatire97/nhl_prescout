@@ -185,3 +185,38 @@ models:
         description: Boolean to determine if the player is the goalie or not
       - name: loaded_at
         description: The time the row was loaded into the table
+  - name: int_on_ice_validation
+    description:
+    config:
+      persist_docs:
+        relation: true
+        columns: true
+    columns:
+      - name: event_key
+        description: ""
+      - name: game_id
+        description: ""
+      - name: type_desc_key
+        description: ""
+      - name: strength_state
+        description: ""
+      - name: situation_code
+        description: ""
+      - name: actual_home_skaters
+        description: ""
+      - name: actual_home_goalie
+        description: ""
+      - name: actual_away_skaters
+        description: ""
+      - name: actual_away_goalie
+        description: ""
+      - name: expected_home_skaters
+        description: ""
+      - name: expected_home_goalie
+        description: ""
+      - name: expected_away_skaters
+        description: ""
+      - name: expected_away_goalie
+        description: ""
+      - name: is_match
+        description: ""
