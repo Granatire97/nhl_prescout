@@ -50,7 +50,11 @@ models:
       - name: loaded_at
         description: Column that holds when the value was added to the table
   - name: fct_events
-    description: Fact table for events. vents with no owning team (stoppages, period starts) will have NULL in all four columns, since is_event_team is NULL there. One row per event_key
+    description: Fact table for events. Events with no owning team (stoppages, period starts) will have NULL in all six columns, since is_event_team is NULL there. One row per event_key
+    data_tests:
+      - dbt_utils.equal_rowcount:
+          arguments:
+            compare_model: ref('int_play_by_play')
     config:
       persist_docs:
         relation: true
