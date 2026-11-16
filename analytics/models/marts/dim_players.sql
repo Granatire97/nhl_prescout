@@ -7,13 +7,15 @@
 }}
 WITH ranked_rows AS (
     SELECT 
-        player_id || ' - ' || season AS player_key,
-        *,
+        rs.player_id || ' - ' || rs.season AS player_key,
+        rs.*,
         ROW_NUMBER() OVER (
-            PARTITION BY player_id, season 
-            ORDER BY loaded_at DESC
+            PARTITION BY rs.player_id, rs.season 
+            ORDER BY s.game_date DESC, rs.game_id DESC
         ) AS rn
-    FROM {{ ref("stg_roster_spots")}}
+    FROM {{ ref("stg_roster_spots")}} rs
+    JOIN {{ ref("stg_schedule") }} s ON 
+        rs.game_id = s.game_id
 ),
 latest AS (
     SELECT *
@@ -30,7 +32,7 @@ number_of_games AS (
 )
 SELECT 
     l.player_key,
-    l.season, 
+    l.season,
     l.team_id, 
     l.team_abbrev,
     l.player_id,
