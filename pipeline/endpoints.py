@@ -12,5 +12,8 @@ ROSTER_ENDPOINT = "/v1/roster/{team}/{season}"
 BASE_REST_URL = "https://api.nhle.com/stats/rest"
 SHIFTCHART_ENDPOINT = "/en/shiftcharts?cayenneExp=gameId={game_id}"
 
+# Standings
+STANDINGS_ENDPOINT = "/v1/standings/{date}"
+
 # Duckdb Warehouse
 DB_PATH = ROOT / "data" / "pre_scout_warehouse.duckdb"

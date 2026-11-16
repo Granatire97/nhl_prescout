@@ -18,7 +18,6 @@ with open(CONFIG_PATH, "r") as file:
     # safe_load prevents execution of arbitrary code embedded in YAML files
     config = yaml.safe_load(file)
 
-team = config["team"]
 season = config["season"]
 
 # Manifest Asset

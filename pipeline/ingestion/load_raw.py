@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List, Iterable
 from pipeline.ingestion.manifest import ingest_manifest
 import duckdb
+from pipeline.ingestion.team_standings import fetch_all_teams
 from pipeline.endpoints import DB_PATH
 from pipeline.raw_storage import RAW_PBP, RAW_SHIFTS, RAW_BOXSCORE, RAW_SCHEDULE, RAW_ROSTER_SPOTS
 
@@ -16,7 +17,6 @@ with open(CONFIG_PATH, "r") as file:
     # safe_load prevents execution of arbitrary code embedded in YAML files
     config = yaml.safe_load(file)
 
-team = config["team"]
 season = config["season"]
 
 class RawConfig(dg.Config):
@@ -33,7 +33,7 @@ RAW_TABLE_NAMES = ["pbp_plays", "boxscore_players", "shifts", "schedule", "roste
 )
 def raw_tables(context: dg.AssetExecutionContext, config: RawConfig):
     """
-    Function that will be called nightly to load all 4 tables
+    Function that will be called nightly to load all 5 tables
     """
     con = duckdb.connect(DB_PATH)
     query = "SELECT game_id FROM ingest.manifest_games WHERE season = ?"
@@ -44,7 +44,7 @@ def raw_tables(context: dg.AssetExecutionContext, config: RawConfig):
     pbp_paths = get_existing_paths(season, games, "pbp.json")
     boxscore_paths = get_existing_paths(season, games, "boxscore.json")
     shifts_paths = get_existing_paths(season, games, "shifts.json")
-    schedule_path = RAW_DIR / str(season) / f"schedule_{team}.json"
+    schedule_paths = list((RAW_DIR / str(season)).glob("schedule_*.json"))
 
 
     if not pbp_paths:
@@ -59,8 +59,8 @@ def raw_tables(context: dg.AssetExecutionContext, config: RawConfig):
         context.log.warning(f"No shifts files to load for season {season}")
         con.close()
         return
-    if not schedule_path.exists():
-        context.log.warning(f"No schedule to load for season {season} and team {team}")
+    if not schedule_paths:
+        context.log.warning(f"No schedule to load for season {season}")
         con.close()
         return
     
@@ -71,7 +71,10 @@ def raw_tables(context: dg.AssetExecutionContext, config: RawConfig):
         load_game_table(con, select_sql=RAW_ROSTER_SPOTS, paths=pbp_paths, temp_table_name="incoming_raw_roster_spots", table_name="raw.roster_spots")
         load_game_table(con, select_sql=RAW_BOXSCORE, paths=boxscore_paths, temp_table_name="incoming_raw_boxscore", table_name="raw.boxscore_players")
         load_game_table(con, select_sql=RAW_SHIFTS, paths=shifts_paths, temp_table_name="incoming_raw_shifts", table_name="raw.shifts")
-        load_schedule_table(con, select_sql=RAW_SCHEDULE, schedule_path=schedule_path, season=season, team=team, temp_table_name="incoming_raw_schedule", table_name="raw.schedule")
+
+        for path in schedule_paths:
+            team = (path.stem.removeprefix("schedule_"))
+            load_schedule_table(con, select_sql=RAW_SCHEDULE, schedule_path=path, season=season, team=team, temp_table_name="incoming_raw_schedule", table_name="raw.schedule")
 
         # per-game row counts
         pbp_query = "SELECT game_id, count(*) FROM raw.pbp_plays GROUP BY game_id ORDER BY game_id"

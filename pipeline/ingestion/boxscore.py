@@ -15,7 +15,6 @@ with open(CONFIG_PATH, "r") as file:
     # safe_load prevents execution of arbitrary code embedded in YAML files
     setting = yaml.safe_load(file)
 
-team = setting["team"]
 season = setting["season"]
 
 class BoxscoreConfig(dg.Config):

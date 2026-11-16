@@ -5,48 +5,67 @@ from pathlib import Path
 from pipeline.client import fetch_many
 from pipeline.storage import write_json_atomic
 from pipeline.endpoints import BASE_URL, SCHEDULE_ENDPOINT
-
+from pipeline.ingestion.team_standings import fetch_all_teams
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG_PATH = ROOT / "config" / "settings.yaml"
 RAW_DIR = ROOT / "data" / "raw"
+
 
 # Open the YAML file and load its contents
 with open(CONFIG_PATH, "r") as file:
     # safe_load prevents execution of arbitrary code embedded in YAML files
     config = yaml.safe_load(file)
 
-team = config["team"]
 season = config["season"]
-SCHEDULE_URL = BASE_URL + SCHEDULE_ENDPOINT.format(team=team, season=season)
 
-# First asset - Full DETROIT RED WINGS schedule
+# First asset - All team schedules
 @dg.asset
 async def raw_schedule(context: dg.AssetExecutionContext):
-    """ Gets full raw schedule"""
-    try: 
-        team_data = (await fetch_many([SCHEDULE_URL]))[0]
-        context.log.info(f"Successfully fetched {team} schedule for season {season}.")
-    except ValueError as e:
-        raise ValueError(f"No schedule found for team '{team}' in season {season}. Check team and season in {CONFIG_PATH}.") from e 
-    
-    if not team_data.get("games"):
-        raise ValueError(f"No games found for team '{team}' in season {season}. Check the season in {CONFIG_PATH}.")
-    
-    out_path = RAW_DIR / str(season) / f"schedule_{team}.json"
-    write_json_atomic(out_path, team_data)
+    """ Gets full raw schedule """
+    all_out_paths = []
+    all_file_sizes = 0
+    safe_game_ids = set()
+    urls = []
 
-    completed_games = filter_schedule(team_data, team)
+    if config['teams'] == "ALL":
+        team_info = fetch_all_teams()
+        teams = [ entry.get("teamAbbrev", {}).get("default") for entry in team_info.get("standings", [])]
+    else:
+        teams = config['teams']
+    
+    for team in teams:
+        SCHEDULE_URL = BASE_URL + SCHEDULE_ENDPOINT.format(team=team, season=season)
+        urls.append(SCHEDULE_URL)
 
-    if len(completed_games) == 0:
-        context.log.warning(f"0 completed regular season games for {team} in {season}.")
+    results = await fetch_many(urls, return_exceptions=True)
+
+    for team, team_data in zip(teams, results):
+        if isinstance(team_data, Exception):
+            raise ValueError(f"No schedule found for team '{team}' in season {season}. Check team and season in {CONFIG_PATH}.")
+        
+        if not team_data.get("games"):
+            raise ValueError(f"No games found for team '{team}' in season {season}. Check the season in {CONFIG_PATH}.")
+        
+        out_path = RAW_DIR / str(season) / f"schedule_{team}.json"
+        write_json_atomic(out_path, team_data)
+        file_size = out_path.stat().st_size
+        all_out_paths.append(str(out_path))
+        all_file_sizes += file_size
+
+        completed_games = filter_schedule(team_data, team)
+
+        safe_game_ids.update(row["game_id"] for row in completed_games if row.get("game_id") is not None)
+
+        if len(completed_games) == 0:
+            context.log.warning(f"0 completed regular season games for {team} in {season}.")
 
     return dg.MaterializeResult(
         metadata={
             "season": season,
-            "team": team,
-            "file_size_bytes": out_path.stat().st_size,
-            "path": str(out_path),
-            "completed_regular_season_games": len(completed_games)
+            "team": teams,
+            "avg_file_size_bytes": all_file_sizes / len(teams),
+            "paths": all_out_paths,
+            "completed_regular_season_games": len(safe_game_ids)
         }
     )
 
@@ -68,12 +87,15 @@ def filter_schedule(schedule, team):
     return completed_game_list
 
 def load_completed_game_ids():
-    schedule_path = RAW_DIR / str(season) / f"schedule_{team}.json"
-    with open(schedule_path, "r", encoding="utf-8") as file:
-        schedule = json.load(file)
+    game_ids = set()
+    schedule_paths = (RAW_DIR / str(season)).glob("schedule_*.json")
 
-    completed_games = filter_schedule(schedule, team)
-    if not completed_games:
-        raise ValueError(f"No completed regular season games for {team} in {season}, nothing to fetch.")
+    for path in schedule_paths:
+        with open(path, "r", encoding="utf-8") as file:
+            schedule = json.load(file)
 
-    return [game["game_id"] for game in completed_games]
+        completed_games = filter_schedule(schedule, None)
+        game_ids.update(row["game_id"] for row in completed_games if row.get("game_id") is not None)
+
+    return sorted(game_ids)
+

@@ -12,13 +12,13 @@ CONFIG_PATH = ROOT / "config" / "settings.yaml"
 RAW_DIR = ROOT / "data" / "raw"
 MIN_PLAYERS_PER_TEAM = 18
 MIN_REG_END_SECONDS = 19 * 60
+MAX_SHIFT_OVERLAP_SECONDS = 10
 
 # Open the YAML file and load its contents
 with open(CONFIG_PATH, "r") as file:
     # safe_load prevents execution of arbitrary code embedded in YAML files
     setting = yaml.safe_load(file)
 
-team = setting["team"]
 season = setting["season"]
 
 class ShiftsConfig(dg.Config):
@@ -50,7 +50,7 @@ def check_shifts(shifts):
 
     for row in shift_rows:
         team_to_players.setdefault(row["teamId"], set()).add(row["playerId"])
-    
+
     if len(team_to_players) < 2:
         flags.append("PARTIAL_SHIFTS")
     elif any(len(player_set) < MIN_PLAYERS_PER_TEAM for player_set in team_to_players.values()):
@@ -82,4 +82,24 @@ def check_shifts(shifts):
         last_end = max(mmss_to_seconds(r["endTime"]) for r in shift_rows if r["period"] == 3)
         if last_end < MIN_REG_END_SECONDS:
             flags.append("TRUNCATED_SHIFTS")
+
+    player_period_shifts = {}
+    for row in shift_rows:
+        player_period_shifts.setdefault((row["playerId"], row["period"]), []).append((mmss_to_seconds(row["startTime"]), mmss_to_seconds(row["endTime"])))
+
+    for player_shifts in player_period_shifts.values():
+        sorted_values = sorted(player_shifts)
+
+        for i in range(1, len(sorted_values)):
+            prev_start, prev_end = sorted_values[i-1]
+            curr_start, curr_end = sorted_values[i]
+
+            if curr_start > prev_start and curr_start < prev_end and curr_end > prev_end:
+                overlap = prev_end - curr_start
+
+                if overlap > MAX_SHIFT_OVERLAP_SECONDS:
+                    flags.append("OVERLAPPED_SHIFTS")
+                    break
+        if "OVERLAPPED_SHIFTS" in flags:
+            break
     return flags

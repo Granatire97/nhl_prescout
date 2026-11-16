@@ -47,12 +47,24 @@ pnpm install
 
 ## Configuration
 
-Set the team and season in `config/settings.yaml`:
+Set the teams and season in `config/settings.yaml`:
 
-```yaml
-team: DET
-season: 20262027
-```
+    teams: ALL        # or a list, e.g. [DET, TOR]
+    season: 20262027  # one season per run
+
+- `teams: ALL` gets the season's teams from the NHL standings endpoint and fetches every team's schedule. The game list for pbp, boxscore and shifts is the deduplicated union of completed regular-season games across all schedule files in `data/raw/{season}/`, so each game is fetched once.
+- To backfill another season, change `season`, run **Materialize all**, then set it back.
+- The game list is built from every `schedule_*.json` in the season folder. To go back to a single team, delete the other schedule files first.
+
+### Backfill and run times (Nov 2026, local Mac)
+
+| Run                                 | Games  | Total time                          |
+| ----------------------------------- | ------ | ----------------------------------- |
+| 2025-26 full league backfill        | 1,312  | ~10.5 min                           |
+| 2026-27 to date                     | 330    | ~3.5 min                            |
+| Normal run, nothing new to download | ~1,640 | ~1.5 min (`raw_tables` 5s, dbt 23s) |
+
+Disk size of `data/raw`: 1.2 GB (2025-26 full season plus 2026-27 to date, Nov 16, 2026).
 
 ## How to run
 
@@ -72,7 +84,7 @@ This runs five assets in order:
 
 | Asset              | Output                                                                                                     |
 | ------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `raw_schedule`     | `data/raw/{season}/schedule_{team}.json`                                                                   |
+| `raw_schedule`     | `data/raw/{season}/schedule_{team}.json`, one file per team                                                |
 | `raw_pbp`          | `data/raw/{season}/{gameId}/pbp.json` for every completed regular season game                              |
 | `raw_boxscore`     | `data/raw/{season}/{gameId}/boxscore.json` for every completed regular season game                         |
 | `raw_shifts`       | `data/raw/{season}/{gameId}/shifts.json` for every completed regular season game                           |
@@ -84,15 +96,23 @@ This runs five assets in order:
 
 Each asset validates its files and records flagged game IDs in the run metadata. Flagged files are kept, not deleted.
 
-| Flag                   | Asset          | Rule                                                                                          |
-| ---------------------- | -------------- | --------------------------------------------------------------------------------------------- |
-| `EMPTY_PLAYS`          | `raw_pbp`      | `plays` missing or empty                                                                      |
-| `MISSING_PLAYER_STATS` | `raw_boxscore` | either team has no forwards in `playerByGameStats`                                            |
-| `EMPTY_SHIFTS`         | `raw_shifts`   | no shift rows (`typeCode` 517)                                                                |
-| `PARTIAL_SHIFTS`       | `raw_shifts`   | either team has fewer than 18 players with shifts                                             |
-| `TRUNCATED_SHIFTS`     | `raw_shifts`   | shifts end before the game's last period, or a regulation game's last shift ends before 19:00 |
+| Flag                   | Asset          | Rule                                                                                                          |
+| ---------------------- | -------------- | ------------------------------------------------------------------------------------------------------------- |
+| `EMPTY_PLAYS`          | `raw_pbp`      | `plays` missing or empty                                                                                      |
+| `MISSING_PLAYER_STATS` | `raw_boxscore` | either team has no forwards in `playerByGameStats`                                                            |
+| `EMPTY_SHIFTS`         | `raw_shifts`   | no shift rows (`typeCode` 517)                                                                                |
+| `PARTIAL_SHIFTS`       | `raw_shifts`   | either team has fewer than 18 players with shifts                                                             |
+| `TRUNCATED_SHIFTS`     | `raw_shifts`   | shifts end before the game's last period, or a regulation game's last shift ends before 19:00                 |
+| `OVERLAPPED_SHIFTS`    | `raw_shifts`   | a player has two shifts in the same period that overlap by more than 10 seconds (`MAX_SHIFT_OVERLAP_SECONDS`) |
 
-Shootouts count as period 5 but have no shifts, so shift data is expected to end at period 4. Validated on 2025-26 DET: 82 games, 0 flags. Recent games can return empty shift data until the NHL publishes it, so `EMPTY_SHIFTS` on a game from the last few days usually clears on a later run with `force: true`.
+Shootouts count as period 5 but have no shifts, so shift data is expected to end at period 4. Games with any flag are marked unusable in `ingest.manifest_games` and are not loaded to raw.
+
+Known gaps:
+
+- 2025-26: 1 unusable game (`2025020634`, overlapping goalie shifts).
+- 2026-27: 51 `EMPTY_SHIFTS` games, mostly Oct 22–28, 2026 (missing at the NHL source, still empty when fetched Nov 16), and 2 `OVERLAPPED_SHIFTS`.
+
+Flagged files are skipped on later runs like any cached file. Use `force: true` to re-fetch them (SCRUM-56 will automate retries).
 
 `raw_pbp`, `raw_boxscore`, and `raw_shifts` skip games already on disk, so re-runs only fetch new games. Files are keyed by season and game ID, so games shared between teams are fetched once. Each run logs attempted, downloaded, skipped, failed, and flagged counts as asset metadata.
 
