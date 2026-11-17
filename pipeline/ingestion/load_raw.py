@@ -40,7 +40,7 @@ def raw_tables(context: dg.AssetExecutionContext, config: RawConfig):
     shift_usable_games_query = "SELECT game_id FROM ingest.manifest_games WHERE season = ?"
     if not config.include_unusable:
         pbp_usable_games_query += " AND pbp_usable = 1"
-        shift_usable_games_query += " AND shifts_usable = 1"
+        shift_usable_games_query += " AND shift_usable = 1"
 
     pbp_games = [row[0] for row in con.execute(pbp_usable_games_query, [str(season)]).fetchall()]
     shifts_games = [row[0] for row in con.execute(shift_usable_games_query, [str(season)]).fetchall()]
