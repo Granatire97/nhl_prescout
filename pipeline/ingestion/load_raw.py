@@ -36,14 +36,17 @@ def raw_tables(context: dg.AssetExecutionContext, config: RawConfig):
     Function that will be called nightly to load all 5 tables
     """
     con = duckdb.connect(DB_PATH)
-    query = "SELECT game_id FROM ingest.manifest_games WHERE season = ?"
+    pbp_usable_games_query = "SELECT game_id FROM ingest.manifest_games WHERE season = ?"
+    shift_usable_games_query = "SELECT game_id FROM ingest.manifest_games WHERE season = ?"
     if not config.include_unusable:
-        query += " AND usable = 1"
+        pbp_usable_games_query += " AND pbp_usable = 1"
+        shift_usable_games_query += " AND shifts_usable = 1"
 
-    games = [row[0] for row in con.execute(query, [str(season)]).fetchall()]
-    pbp_paths = get_existing_paths(season, games, "pbp.json")
-    boxscore_paths = get_existing_paths(season, games, "boxscore.json")
-    shifts_paths = get_existing_paths(season, games, "shifts.json")
+    pbp_games = [row[0] for row in con.execute(pbp_usable_games_query, [str(season)]).fetchall()]
+    shifts_games = [row[0] for row in con.execute(shift_usable_games_query, [str(season)]).fetchall()]
+    pbp_paths = get_existing_paths(season, pbp_games, "pbp.json")
+    boxscore_paths = get_existing_paths(season, pbp_games, "boxscore.json")
+    shifts_paths = get_existing_paths(season, shifts_games, "shifts.json")
     schedule_paths = list((RAW_DIR / str(season)).glob("schedule_*.json"))
 
 
@@ -89,11 +92,17 @@ def raw_tables(context: dg.AssetExecutionContext, config: RawConfig):
         context.log.info(f"boxscore rows per game: {boxscore_per_game}")
         context.log.info(f"shifts rows per game: {shifts_per_game}")
 
-        # validation query
-        validation_query = "SELECT game_id FROM ingest.manifest_games WHERE season = ? AND usable = 1 AND game_id NOT IN (SELECT game_id FROM raw.pbp_plays)"
-        validation_query_results = [row[0] for row in con.execute(validation_query, [str(season)]).fetchall()]
-        if validation_query_results:
-            raise ValueError(f"Missing Game IDs: {validation_query_results}")
+        # pbp validation query
+        pbp_validation_query = "SELECT game_id FROM ingest.manifest_games WHERE season = ? AND pbp_usable = 1 AND game_id NOT IN (SELECT game_id FROM raw.pbp_plays)"
+        pbp_validation_query_results = [row[0] for row in con.execute(pbp_validation_query, [str(season)]).fetchall()]
+        if pbp_validation_query_results:
+            raise ValueError(f"Missing Game IDs: {pbp_validation_query_results}")
+
+        # shift validation query
+        shift_validation_query = "SELECT game_id FROM ingest.manifest_games WHERE season = ? AND shift_usable = 1 AND game_id NOT IN (SELECT game_id FROM raw.shifts)"
+        shift_validation_query_results = [row[0] for row in con.execute(shift_validation_query, [str(season)]).fetchall()]
+        if shift_validation_query_results:
+            raise ValueError(f"Missing Game IDs: {shift_validation_query_results}")
         
         # total row counts for each table
         pbp_row_counts = con.execute("SELECT count(*) FROM raw.pbp_plays").fetchone()[0]
@@ -108,10 +117,10 @@ def raw_tables(context: dg.AssetExecutionContext, config: RawConfig):
         raise
     finally:
         con.close()
-    yield dg.MaterializeResult(asset_key=["raw", "pbp_plays"], metadata={"row_count": pbp_row_counts, "games_loaded": len(games), "missing_pbp_games": len(validation_query_results)})
-    yield dg.MaterializeResult(asset_key=["raw", "roster_spots"], metadata={"row_count": roster_row_count, "games_loaded": len(games), "missing_pbp_games": len(validation_query_results)})
+    yield dg.MaterializeResult(asset_key=["raw", "pbp_plays"], metadata={"row_count": pbp_row_counts, "games_loaded": len(pbp_games), "missing_pbp_games": len(pbp_validation_query_results)})
+    yield dg.MaterializeResult(asset_key=["raw", "roster_spots"], metadata={"row_count": roster_row_count, "games_loaded": len(pbp_games), "missing_pbp_games": len(pbp_validation_query_results)})
     yield dg.MaterializeResult(asset_key=["raw", "boxscore_players"], metadata={"row_count": boxscore_row_counts})
-    yield dg.MaterializeResult(asset_key=["raw", "shifts"], metadata={"row_count": shifts_row_counts})
+    yield dg.MaterializeResult(asset_key=["raw", "shifts"], metadata={"row_count": shifts_row_counts, "missing_shift_games": len(shift_validation_query_results)})
     yield dg.MaterializeResult(asset_key=["raw", "schedule"], metadata={"row_count": schedule_row_count})
 
 def load_game_table(con, select_sql, paths, temp_table_name, table_name):
