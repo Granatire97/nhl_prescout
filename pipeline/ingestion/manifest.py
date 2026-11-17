@@ -54,14 +54,16 @@ def ingest_manifest(context: dg.AssetExecutionContext) -> dg.MaterializeResult:
                                 WHEN pbp_usable = 1
                                 AND COUNT(*) FILTER (WHERE endpoint in ('shifts') and status not in ('FAILED') and len(flags) = 0) 
                                 THEN 1 ELSE 0
-                            END AS shifts_usable,
+                            END AS shift_usable,
                         FROM ingest.manifest_latest
                         GROUP BY season, game_id
                         """)
-            total, complete, unusable = con.execute("""
+            total, complete, unusable, pbp_unusable, shift_unusable = con.execute("""
                 SELECT COUNT(*),
                     COUNT(*) FILTER (WHERE usable = 1),
-                    COUNT(*) FILTER (WHERE usable = 0)
+                    COUNT(*) FILTER (WHERE usable = 0),
+                    COUNT(*) FILTER (WHERE pbp_usable = 0),
+                    COUNT(*) FILTER (WHERE shift_usable = 0)
                 FROM ingest.manifest_games
             """).fetchone()
 
@@ -73,12 +75,14 @@ def ingest_manifest(context: dg.AssetExecutionContext) -> dg.MaterializeResult:
         finally:
              con.close()
 
-        context.log.info(f"Games: {total}, complete: {complete}, unusable: {unusable}, flag_counts: {flag_counts}")
+        context.log.info(f"Games: {total}, complete: {complete}, unusable: {unusable}, pbp_unusable: {pbp_unusable}, shift_unusable: {shift_unusable}, flag_counts: {flag_counts}")
         return dg.MaterializeResult(
         metadata={
             "total_games": total,
             "fully_completed_games": complete,
             "unusable": unusable,
+            "pbp_unusable": pbp_unusable,
+            "shift_unusable": shift_unusable,
             "flag_counts": flag_counts,
         }
     )
