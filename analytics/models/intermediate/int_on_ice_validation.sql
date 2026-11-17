@@ -22,7 +22,7 @@ SELECT
 FROM {{ ref('int_play_by_play') }} pbp
 LEFT JOIN {{ ref('int_events_on_ice') }} ei
     ON pbp.event_key = ei.event_key
-WHERE ei.game_id IN (SELECT DISTINCT game_id FROM {{ ref('stg_shifts') }})
+WHERE pbp.game_id IN (SELECT DISTINCT game_id FROM {{ ref('stg_shifts') }})
 GROUP BY pbp.event_key, expected_home_skaters,expected_away_skaters,
 expected_home_goalie,expected_away_goalie, pbp.game_id, pbp.type_desc_key, pbp.strength_state,
 pbp.situation_code

@@ -48,11 +48,12 @@ def ingest_manifest(context: dg.AssetExecutionContext) -> dg.MaterializeResult:
                             END AS usable,
                             flatten(LIST(flags)) AS all_flags,
                             CASE
-                                WHEN COUNT(*) FILTER (WHERE endpoint in ('boxscore', 'pbp') and status not in ('FAILED') and len(flags) = 0) THEN 1 ELSE 0
+                                WHEN COUNT(*) FILTER (WHERE endpoint in ('boxscore', 'pbp') and status <> 'FAILED' and len(flags) = 0) = 2
+                                THEN 1 ELSE 0
                             END AS pbp_usable,
                             CASE 
                                 WHEN pbp_usable = 1
-                                AND COUNT(*) FILTER (WHERE endpoint in ('shifts') and status not in ('FAILED') and len(flags) = 0) 
+                                AND COUNT(*) FILTER (WHERE endpoint in ('shifts') and status not in ('FAILED') and len(flags) = 0) = 1
                                 THEN 1 ELSE 0
                             END AS shift_usable,
                         FROM ingest.manifest_latest
