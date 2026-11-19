@@ -103,17 +103,15 @@ SELECT
     game_id,
     period,
     team_abbrev,
+    team_skaters,
+    team_goalie_in_net,
+    opponent,
+    opp_skaters,
+    opp_goalie_in_net,
     interval_start,
     interval_end,
     interval_end - interval_start AS duration_seconds,
-    CASE
-        WHEN team_skaters = 1 OR opp_skaters = 1 THEN 'PS'
-        WHEN team_skaters = 6 THEN 'EA'
-        WHEN opp_skaters = 6 THEN 'EN'
-        WHEN team_skaters > opp_skaters THEN 'PP'
-        WHEN team_skaters < opp_skaters THEN 'PK'
-        ELSE 'EV'
-    END AS strength_state,
+    {{ strength_state('team_skaters', 'opp_skaters') }} AS strength_state,
     {{ skater_state('team_skaters', 'opp_skaters') }} AS skater_state,
     current_timestamp AS loaded_at
 FROM team_view
