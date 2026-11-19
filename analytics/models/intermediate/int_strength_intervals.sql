@@ -71,7 +71,7 @@ on_ice_counts AS (
         i.interval_end,
         sh.team_abbrev,
         COUNT(*) FILTER (WHERE position <> 'G') AS team_skaters,
-        COUNT(*) FILTER (WHERE position = 'G') AS team_goalie_in_net
+        least(COUNT(*) FILTER (WHERE position = 'G'), 1) AS team_goalie_in_net
     FROM intervals i
     JOIN shifts sh 
         ON sh.game_id = i.game_id
