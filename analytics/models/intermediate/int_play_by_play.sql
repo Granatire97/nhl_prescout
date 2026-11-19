@@ -56,14 +56,9 @@ SELECT
     END AS is_empty_net_against,
     CASE
         WHEN is_home IS NULL THEN NULL
-        WHEN event_skaters = 1 OR opp_skaters = 1 THEN 'PS'
-        WHEN event_skaters = 6 THEN 'EA'
-        WHEN opp_skaters = 6 THEN 'EN'
-        WHEN event_skaters > opp_skaters THEN 'PP'
-        WHEN event_skaters < opp_skaters THEN 'PK'
-    ELSE 'EV'
+        ELSE {{ strength_state('event_skaters', 'opp_skaters') }}
     END AS strength_state,
-    event_skaters || 'v' || opp_skaters AS skater_state,
+    {{ skater_state('event_skaters', 'opp_skaters') }} AS skater_state,
     CASE 
         WHEN is_home IS NULL OR home_team_defending_side IS NULL THEN NULL 
         WHEN (is_home AND home_team_defending_side = 'left') OR (is_home = false AND home_team_defending_side = 'right') THEN x_raw
