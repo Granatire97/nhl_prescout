@@ -78,18 +78,17 @@ decision AS (
     SELECT 
         g.*,
         CASE 
-            WHEN not is_completed THEN NULL
+            WHEN lp.game_id IS NULL THEN NULL
             WHEN lp.last_period > 3 THEN true 
             ELSE false
         END AS is_ot,
         CASE 
-            WHEN not is_completed THEN NULL
+            WHEN lp.game_id IS NULL THEN NULL
             WHEN lp.last_period = 5 AND g.game_type = 2 THEN true 
             ELSE false
         END AS is_shootout,
         CASE 
-            WHEN not is_completed THEN NULL
-            WHEN is_completed AND g.goals_for = 0 AND g.goals_against = 0 AND is_ot = NULL AND is_shootout = NULL THEN NULL
+            WHEN lp.game_id IS NULL THEN NULL
             WHEN (is_ot OR is_shootout) AND goals_against > goals_for THEN 'OTL'
             WHEN (not is_ot AND not is_shootout) AND goals_against > goals_for THEN 'L' 
             ELSE 'W' 
@@ -105,6 +104,7 @@ rest_days_game_number AS (
         ROW_NUMBER() OVER (PARTITION BY team_abbrev, season, game_type ORDER BY game_date) AS team_game_number,
         date_diff('day', LAG(game_date) OVER (PARTITION BY team_abbrev, season ORDER BY game_date), game_date) - 1 AS rest_days,
         CASE 
+            WHEN rest_days IS NULL THEN NULL
             WHEN rest_days = 0 THEN true 
             ELSE false
         END AS is_back_to_back

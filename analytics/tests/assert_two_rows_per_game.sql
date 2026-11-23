@@ -1,4 +1,4 @@
-{{ config(severity='warn') }}
+{{ config(severity='error') }}
 SELECT 
     game_id, 
     COUNT(*) AS row_count
