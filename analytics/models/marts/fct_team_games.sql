@@ -69,27 +69,27 @@ goals_total AS (
 ),
 last_period AS (
     SELECT
-        pbp.*,
-        LAST_VALUE(pbp.period) OVER (
-            PARTITION BY pbp.game_id
-            ORDER BY pbp.sort_order 
-            ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
-        ) AS last_period
+        pbp.game_id,
+        max(pbp.period) AS last_period
     FROM {{ref("stg_play_by_play")}} pbp
+    GROUP BY pbp.game_id
 ),
 decision AS (
     SELECT 
         g.*,
         CASE 
+            WHEN not is_completed THEN NULL
             WHEN lp.last_period > 3 THEN true 
             ELSE false
         END AS is_ot,
         CASE 
+            WHEN not is_completed THEN NULL
             WHEN lp.last_period = 5 AND g.game_type = 2 THEN true 
             ELSE false
         END AS is_shootout,
         CASE 
             WHEN not is_completed THEN NULL
+            WHEN is_completed AND g.goals_for = 0 AND g.goals_against = 0 AND is_ot = NULL AND is_shootout = NULL THEN NULL
             WHEN (is_ot OR is_shootout) AND goals_against > goals_for THEN 'OTL'
             WHEN (not is_ot AND not is_shootout) AND goals_against > goals_for THEN 'L' 
             ELSE 'W' 
@@ -97,24 +97,21 @@ decision AS (
     FROM goals_total g
     LEFT JOIN last_period lp
         ON lp.game_id = g.game_id
-    WHERE g.team_abbrev = 'DET' AND g.season = 20262027
     GROUP BY ALL
-    ORDER BY g.game_date
 ),
 rest_days_game_number AS (
     SELECT 
         *,
         ROW_NUMBER() OVER (PARTITION BY team_abbrev, season, game_type ORDER BY game_date) AS team_game_number,
-        date_diff('day', LAG(game_date) OVER (PARTITION BY team_abbrev, season, game_type ORDER BY game_date), game_date) - 1 AS rest_days,
+        date_diff('day', LAG(game_date) OVER (PARTITION BY team_abbrev, season ORDER BY game_date), game_date) - 1 AS rest_days,
         CASE 
-            WHEN not is_completed THEN NULL
             WHEN rest_days = 0 THEN true 
             ELSE false
         END AS is_back_to_back
     FROM decision
+    WHERE game_type != 1
 )
 SELECT
     *,
     current_timestamp AS loaded_at
 FROM rest_days_game_number
-WHERE game_type != 1
