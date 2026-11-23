@@ -196,3 +196,60 @@ models:
         description: Defenseman player ids for the opponent team
       - name: opponent_team_goalie_id
         description: Goalie player ids for the opponent team
+  - name: fct_team_games
+    description: Fact table of the each team games. Two rows per game (one per team), results for completed games, scheduled future games, rest context.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [game_id, team_abbrev]
+    config:
+      persist_docs:
+        relation: true
+        columns: true
+    columns:
+      - name: season
+        description: Season column
+      - name: game_id
+        description: Column that stores the game id
+        data_tests:
+          - not_null
+      - name: game_type
+        description: Column that stores the game type
+      - name: game_date
+        description: Column that stores the game date
+      - name: team_abbrev
+        description: Column that stores the team abbrev
+        data_tests:
+          - not_null
+      - name: opponent
+        description: Column that stores the teams opponent
+        data_tests:
+          - not_null
+      - name: is_home
+        description: Column that is true/false on if the team is home
+      - name: goals_for
+        description: Number of goals the team scored
+      - name: goals_against
+        description: Number of goals the opponent scored against the team
+      - name: is_completed
+        description: Column that is true/false if the game is completed
+      - name: is_ot
+        description: Column that is true/false if the game went longer than 3 periods
+      - name: is_shootout
+        description: Column that is true/false if the game went to a shootout
+      - name: decision
+        description: Column that stores the result of the game for the team
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["W", "L", "OTL"]
+      - name: team_game_number
+        description: Column that keeps track of the game number
+        data_tests:
+          - not_null
+      - name: rest_days
+        description: Column that calculates the rest days in between current game and previous game
+      - name: is_back_to_back
+        description: Column that calculates the if the game is back to back
+      - name: loaded_at
+        description: ""
