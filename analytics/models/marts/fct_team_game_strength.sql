@@ -58,6 +58,10 @@ event_for_counts AS (
         e.game_id,
         e.event_team_abbrev,
         CASE 
+            WHEN e.event_team_abbrev = e.home_team_abbrev THEN e.away_team_abbrev 
+            ELSE e.home_team_abbrev 
+        END AS opponent_abbrev,
+        CASE 
             WHEN e.skater_state = '5v5' THEN '5v5'
         END AS strength_bucket,
         COUNT(*) FILTER (WHERE (e.type_desc_key = 'shot-on-goal' OR e.type_desc_key = 'missed-shot' OR e.type_desc_key = 'blocked-shot' OR e.type_desc_key = 'goal')) AS corsi_for,
@@ -66,13 +70,17 @@ event_for_counts AS (
         COUNT(*) FILTER (WHERE (e.type_desc_key = 'goal')) AS goals_for
     FROM {{ ref("fct_events")}} e
     WHERE e.event_team_abbrev IS NOT NULL AND strength_bucket IS NOT NULL
-    GROUP BY e.game_id, e.event_team_abbrev, strength_bucket
+    GROUP BY e.game_id, e.event_team_abbrev, opponent_abbrev, strength_bucket
 
     UNION ALL 
 
     SELECT
         e.game_id,
         e.event_team_abbrev,
+        CASE 
+            WHEN e.event_team_abbrev = e.home_team_abbrev THEN e.away_team_abbrev 
+            ELSE e.home_team_abbrev 
+        END AS opponent_abbrev,
         CASE 
             WHEN e.strength_state = 'PP' THEN 'PP'
         END AS strength_bucket,
@@ -82,13 +90,17 @@ event_for_counts AS (
         COUNT(*) FILTER (WHERE (e.type_desc_key = 'goal')) AS goals_for
     FROM {{ ref("fct_events")}} e
     WHERE e.event_team_abbrev IS NOT NULL AND strength_bucket IS NOT NULL
-    GROUP BY e.game_id, e.event_team_abbrev, strength_bucket
+    GROUP BY e.game_id, e.event_team_abbrev, opponent_abbrev, strength_bucket
 
     UNION ALL 
 
     SELECT
         e.game_id,
         e.event_team_abbrev,
+        CASE 
+            WHEN e.event_team_abbrev = e.home_team_abbrev THEN e.away_team_abbrev 
+            ELSE e.home_team_abbrev 
+        END AS opponent_abbrev,
         CASE 
             WHEN e.strength_state = 'PK' THEN 'PK'
         END AS strength_bucket,
@@ -98,13 +110,17 @@ event_for_counts AS (
         COUNT(*) FILTER (WHERE (e.type_desc_key = 'goal')) AS goals_for
     FROM {{ ref("fct_events")}} e
     WHERE e.event_team_abbrev IS NOT NULL AND strength_bucket IS NOT NULL
-    GROUP BY e.game_id, e.event_team_abbrev, strength_bucket
+    GROUP BY e.game_id, e.event_team_abbrev, opponent_abbrev, strength_bucket
 
     UNION ALL 
 
     SELECT
         e.game_id,
         e.event_team_abbrev,
+        CASE 
+            WHEN e.event_team_abbrev = e.home_team_abbrev THEN e.away_team_abbrev 
+            ELSE e.home_team_abbrev 
+        END AS opponent_abbrev,
         'ALL' AS strength_bucket,
         COUNT(*) FILTER (WHERE (e.type_desc_key = 'shot-on-goal' OR e.type_desc_key = 'missed-shot' OR e.type_desc_key = 'blocked-shot' OR e.type_desc_key = 'goal')) AS corsi_for,
         COUNT(*) FILTER (WHERE (e.type_desc_key = 'shot-on-goal' OR e.type_desc_key = 'missed-shot' OR e.type_desc_key = 'goal')) AS fenwick_for,
@@ -112,17 +128,26 @@ event_for_counts AS (
         COUNT(*) FILTER (WHERE (e.type_desc_key = 'goal')) AS goals_for
     FROM {{ ref("fct_events")}} e
     WHERE e.event_team_abbrev IS NOT NULL AND strength_bucket IS NOT NULL
-    GROUP BY e.game_id, e.event_team_abbrev, strength_bucket
+    GROUP BY e.game_id, e.event_team_abbrev, opponent_abbrev, strength_bucket
 ),
 events_with_against AS (
-    SELECT 
-        a.*,
-        coalesce(b.corsi_for, 0) AS corsi_against,
+    SELECT
+        coalesce(a.game_id, b.game_id) AS game_id,
+        coalesce(a.event_team_abbrev, b.opponent_abbrev) AS event_team_abbrev,
+        coalesce(a.strength_bucket,
+                 CASE b.strength_bucket WHEN 'PP' THEN 'PK'
+                                        WHEN 'PK' THEN 'PP'
+                                        ELSE b.strength_bucket END) AS strength_bucket,
+        coalesce(a.corsi_for, 0)   AS corsi_for,
+        coalesce(a.fenwick_for, 0) AS fenwick_for,
+        coalesce(a.shots_for, 0)   AS shots_for,
+        coalesce(a.goals_for, 0)   AS goals_for,
+        coalesce(b.corsi_for, 0)   AS corsi_against,
         coalesce(b.fenwick_for, 0) AS fenwick_against,
-        coalesce(b.shots_for, 0) AS shots_against,
-        coalesce(b.goals_for, 0) AS goals_against
+        coalesce(b.shots_for, 0)   AS shots_against,
+        coalesce(b.goals_for, 0)   AS goals_against
     FROM event_for_counts a
-    LEFT JOIN event_for_counts b
+    FULL OUTER JOIN event_for_counts b
         ON a.game_id = b.game_id
         AND b.strength_bucket = CASE a.strength_bucket
                                     WHEN 'PP' THEN 'PK'
