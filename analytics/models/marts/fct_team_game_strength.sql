@@ -117,14 +117,18 @@ event_for_counts AS (
 events_with_against AS (
     SELECT 
         a.*,
-        b.corsi_for AS corsi_against,
-        b.fenwick_for AS fenwick_against,
-        b.shots_for AS shots_against,
-        b.goals_for AS goals_against
+        coalesce(b.corsi_for, 0) AS corsi_against,
+        coalesce(b.fenwick_for, 0) AS fenwick_against,
+        coalesce(b.shots_for, 0) AS shots_against,
+        coalesce(b.goals_for, 0) AS goals_against
     FROM event_for_counts a
     LEFT JOIN event_for_counts b
         ON a.game_id = b.game_id
-        AND a.strength_bucket = b.strength_bucket
+        AND b.strength_bucket = CASE a.strength_bucket
+                                    WHEN 'PP' THEN 'PK'
+                                    WHEN 'PK' THEN 'PP'
+                                    ELSE a.strength_bucket
+                                END
         AND a.event_team_abbrev <> b.event_team_abbrev
 ),
 game_info AS(
@@ -150,17 +154,17 @@ SELECT
     g.is_home,
     g.strength_bucket,
     g.toi_seconds,
-    e.corsi_for,
-    e.corsi_against,
-    e.fenwick_for,
-    e.fenwick_against,
-    e.shots_for,
-    e.shots_against,
-    e.goals_for,
-    e.goals_against,
+    coalesce(e.corsi_for, 0) AS corsi_for,
+    coalesce(e.corsi_against, 0) AS corsi_against,
+    coalesce(e.fenwick_for, 0) AS fenwick_for,
+    coalesce(e.fenwick_against, 0) AS fenwick_against,
+    coalesce(e.shots_for, 0) AS shots_for,
+    coalesce(e.shots_against, 0) AS shots_against,
+    coalesce(e.goals_for, 0) AS goals_for,
+    coalesce(e.goals_against, 0) AS goals_against,
     current_timestamp as loaded_at
 FROM game_info g
-JOIN events_with_against e
+LEFT JOIN events_with_against e
     ON g.game_id = e.game_id 
     AND g.team_abbrev = e.event_team_abbrev
     AND g.strength_bucket = e.strength_bucket
