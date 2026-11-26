@@ -132,15 +132,19 @@ game_info AS(
         sb.*,
         tg.game_date,
         tg.opponent,
-        tg.is_home
+        tg.is_home,
+        tg.season, 
+        tg.game_type
     FROM strength_bucket sb
     JOIN {{ref("fct_team_games")}} tg 
         ON sb.game_id = tg.game_id
         AND sb.team_abbrev = tg.team_abbrev
 )
 SELECT 
+    g.season,
     g.game_id,
     g.game_date,
+    g.game_type,
     g.team_abbrev,
     g.opponent,
     g.is_home,

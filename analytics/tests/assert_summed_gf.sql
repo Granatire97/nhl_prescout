@@ -1,6 +1,6 @@
 -- depends_on: {{ ref('fct_team_games') }}
 -- depends_on: {{ ref('fct_team_game_strength') }}
-{{ config(severity='warning') }}
+{{ config(severity='warn') }}
 WITH team_games AS (
     SELECT
         game_id,
@@ -9,7 +9,7 @@ WITH team_games AS (
             ELSE SUM(goals_for)
         END AS summed_goals_for
     FROM {{ ref("fct_team_games")}}
-    GROUP BY game_id,
+    GROUP BY game_id
 ),
 game_strength AS (
     SELECT 
