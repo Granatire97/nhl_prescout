@@ -252,4 +252,59 @@ models:
       - name: is_back_to_back
         description: Column that calculates the if the game is back to back
       - name: loaded_at
-        description: ""
+        description: The timestamp of when the row was loaded in the table
+  - name: fct_team_game_strength
+    description: Fact table of the each team game strength shot share. Shot share counts and TOI per team, game, and strength bucket
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [game_id, team_abbrev, strength_bucket]
+    config:
+      persist_docs:
+        relation: true
+        columns: true
+    columns:
+      - name: game_id
+        description: Column that stores the game id
+        data_tests:
+          - not_null
+      - name: game_date
+        description: Column that stores the game date
+        data_tests:
+          - not_null
+      - name: team_abbrev
+        description: Column that stores the team abbrev
+        data_tests:
+          - not_null
+      - name: opponent
+        description: Column that stores the opponent
+        data_tests:
+          - not_null
+      - name: is_home
+        description: Column that stores the boolean of if the team was home or not
+      - name: strength_bucket
+        description: Column that stores the 4 buckets of the strength on the ice
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["ALL", "5v5", "PP", "PK"]
+      - name: toi_seconds
+        description: The sum of duration of seconds for each bucket
+      - name: corsi_for
+        description: Count of shot-on-goal, missed-shot, blocked-shot and goal for the team
+      - name: corsi_against
+        description: Count of shot-on-goal, missed-shot, blocked-shot and goal against the team
+      - name: fenwick_for
+        description: Count of shot-on-goal, missed-shot and goal for the team
+      - name: fenwick_against
+        description: Count of shot-on-goal, missed-shot and goal against the team
+      - name: shots_for
+        description: Count of shots by the team
+      - name: shots_against
+        description: Count of shots against by the team
+      - name: goals_for
+        description: Count of goals scored by the team
+      - name: goals_against
+        description: Count of goals scored against the team
+      - name: loaded_at
+        description: Timestamp of when the row was loaded in the table
